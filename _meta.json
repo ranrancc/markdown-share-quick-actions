@@ -1,0 +1,6 @@
+{
+  "displayName": "Markdown Share Quick Actions",
+  "DisplayDescription": "为 macOS Finder 安装 Markdown 转 Word 和 Markdown 转自包含 HTML 的右键快速操作，适合教师分享讲义、会议纪要和 Obsidian 笔记。",
+  "Keywords": ["document_processing", "education", "productivity"],
+  "License": "MIT-0"
+}
