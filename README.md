@@ -1,9 +1,10 @@
 # Markdown Share Quick Actions
 
-面向 macOS 的 Markdown 分享右键工具包。安装后，Finder 里选中一个或多个 `.md` / `.markdown` 文件，可以右键一键导出：
+跨平台 Markdown 分享工具包。它提供一个通用命令行转换器，并为 macOS 和 Windows 提供系统集成：
 
-- `Markdown 转 Word`：生成同目录同名 `.docx`
-- `Markdown 转 HTML`：生成同目录同名 `.html`
+- macOS：Finder 右键快速操作
+- Windows：SendTo 菜单和拖拽 `.bat`
+- 其他系统：通用 CLI
 
 这个包适合高校教师、研究者和 Obsidian/Markdown 用户：平时用 Markdown 写课程讲义、会议纪要、论文笔记，分享时一键变成 Word 或可投屏的单文件 HTML。
 
@@ -11,24 +12,43 @@
 
 如果用户给你这个仓库 URL，并要求安装或部署，请按这个顺序执行：
 
-1. 确认系统是 macOS。
-2. 确认 `python3` 可用。
-3. 确认 `pandoc` 可用；如果没有，提示用户先安装：
+1. 识别用户系统：macOS、Windows 或其他。
+2. 确认 Python 3 可用。
+3. 确认 `pandoc` 可用；如果没有，提示用户先安装。
+
+macOS 常用安装：
 
 ```bash
 brew install pandoc
 ```
 
-4. 在仓库根目录执行：
+Windows 请从 Pandoc 官网安装：
+
+```text
+https://pandoc.org/installing.html
+```
+
+4. 按系统执行安装。
+
+macOS：
 
 ```bash
 python3 install_all.py
 killall Finder
 ```
 
-5. 告诉用户：在 Finder 中选中 `.md` 或 `.markdown` 文件，右键打开“快速操作”，选择 `Markdown 转 Word` 或 `Markdown 转 HTML`。
+Windows：
 
-## 一键安装
+```bat
+py -3 install_windows.py
+```
+
+5. 告诉用户如何使用：
+   - macOS：Finder 中选中 `.md` 或 `.markdown` 文件，右键打开“快速操作”。
+   - Windows：文件资源管理器中选中文件，右键 `Send to`，选择 Markdown 动作。
+   - 其他系统：使用 `python3 md_share.py word|html|both <files...>`。
+
+## macOS 一键安装
 
 ```bash
 git clone https://github.com/ranrancc/markdown-share-quick-actions.git
@@ -44,11 +64,58 @@ killall Finder
 ~/Library/Services/Markdown 转 HTML.workflow
 ```
 
-## 一键卸载
+## macOS 一键卸载
 
 ```bash
 python3 uninstall_all.py
 killall Finder
+```
+
+## Windows 安装
+
+```bat
+git clone https://github.com/ranrancc/markdown-share-quick-actions.git
+cd markdown-share-quick-actions
+py -3 install_windows.py
+```
+
+安装后，在文件资源管理器中选中 `.md` / `.markdown` 文件，右键：
+
+```text
+Send to -> Markdown to Word
+Send to -> Markdown to HTML
+Send to -> Markdown to Word and HTML
+```
+
+也可以直接把 Markdown 文件拖到：
+
+```text
+windows\md-to-word.bat
+windows\md-to-html.bat
+windows\md-to-both.bat
+```
+
+## Windows 卸载
+
+```bat
+py -3 uninstall_windows.py
+```
+
+## 通用命令行
+
+适用于 macOS、Windows、Linux：
+
+```bash
+python3 md_share.py word note.md
+python3 md_share.py html note.md
+python3 md_share.py both note.md
+python3 md_share.py both ./notes --recursive
+```
+
+Windows 上如果 `python3` 不可用，通常使用：
+
+```bat
+py -3 md_share.py both note.md
 ```
 
 ## 单独安装
@@ -91,7 +158,8 @@ killall Finder
 ## 依赖
 
 - macOS
-- `python3`
+- Windows / Linux 可使用通用 CLI
+- `python3` 或 Windows `py -3`
 - `pandoc`
 
 检查依赖：
@@ -107,7 +175,15 @@ pandoc --version
 brew install pandoc
 ```
 
+Windows 用户从 Pandoc 官网下载安装包：
+
+```text
+https://pandoc.org/installing.html
+```
+
 ## 使用方法
+
+### macOS
 
 1. 在 Finder 里选中一个或多个 `.md` / `.markdown` 文件。
 2. 右键。
@@ -123,6 +199,18 @@ course-note.md
 course-note.docx
 course-note.html
 ```
+
+### Windows
+
+1. 在文件资源管理器中选中一个或多个 `.md` / `.markdown` 文件。
+2. 右键。
+3. 选择 `Send to`。
+4. 选择：
+   - `Markdown to Word`
+   - `Markdown to HTML`
+   - `Markdown to Word and HTML`
+
+或者直接拖拽到 `windows/*.bat`。
 
 ## 给教师的典型场景
 
@@ -183,7 +271,10 @@ md-to-word-quick-action/reference.docx
 ```text
 markdown-share-quick-actions/
 ├── install_all.py
+├── install_windows.py
 ├── uninstall_all.py
+├── uninstall_windows.py
+├── md_share.py
 ├── README.md
 ├── AGENTS.md
 ├── SKILL.md
@@ -197,6 +288,11 @@ markdown-share-quick-actions/
     ├── convert_md_to_html.sh
     ├── build_pretty_html.py
     ├── install_quick_action.py
+    └── README.md
+└── windows/
+    ├── md-to-word.bat
+    ├── md-to-html.bat
+    ├── md-to-both.bat
     └── README.md
 ```
 
