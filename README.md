@@ -161,12 +161,14 @@ killall Finder
 - Windows / Linux 可使用通用 CLI
 - `python3` 或 Windows `py -3`
 - `pandoc`
+- 可选：Node.js / npm。只有当 Markdown 里包含 ```mermaid 图表并希望导出为图片时需要；不安装也能转换，Mermaid 会保留为代码块。
 
 检查依赖：
 
 ```bash
 python3 --version
 pandoc --version
+npm --version  # 可选：仅 Mermaid 图表预渲染需要
 ```
 
 如果 `pandoc` 不存在，常见安装方式：
@@ -275,6 +277,7 @@ markdown-share-quick-actions/
 ├── uninstall_all.py
 ├── uninstall_windows.py
 ├── md_share.py
+├── mermaid-prerender.py
 ├── README.md
 ├── AGENTS.md
 ├── SKILL.md
