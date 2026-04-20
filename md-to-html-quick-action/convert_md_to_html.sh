@@ -1,11 +1,15 @@
 #!/bin/zsh
 
+# Automator strips PATH; restore Homebrew and system tool paths explicitly
+export PATH="/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
+
 set -u
 
 SCRIPT_DIR="${0:A:h}"
 DEFAULT_PANDOC="/opt/homebrew/bin/pandoc"
 PANDOC_BIN="${PANDOC_BIN:-$DEFAULT_PANDOC}"
 HTML_BUILDER="$SCRIPT_DIR/build_pretty_html.py"
+MERMAID_SCRIPT="$SCRIPT_DIR/../mermaid-prerender.py"
 TMP_DIRS=()
 
 show_alert() {
@@ -64,6 +68,28 @@ PY
   printf '%s\n' "$temp_dir/prepared.md"
 }
 
+preprocess_mermaid() {
+  local input_path="$1"
+  if ! grep -q '```mermaid' "$input_path" 2>/dev/null; then
+    printf '%s\n' "$input_path"
+    return
+  fi
+  if [[ ! -f "$MERMAID_SCRIPT" ]]; then
+    printf '%s\n' "$input_path"
+    return
+  fi
+  local temp_dir
+  temp_dir="$(mktemp -d "${TMPDIR:-/tmp}/mermaid-render.XXXXXX")"
+  TMP_DIRS+=("$temp_dir")
+  local output_md="$temp_dir/mermaid-rendered.md"
+  if python3 "$MERMAID_SCRIPT" "$input_path" "$output_md" "$temp_dir/assets" "svg" >/dev/null 2>&1 \
+      && [[ -f "$output_md" ]]; then
+    printf '%s\n' "$output_md"
+  else
+    printf '%s\n' "$input_path"
+  fi
+}
+
 if [[ ! -x "$PANDOC_BIN" ]]; then
   PANDOC_BIN="$(command -v pandoc 2>/dev/null || true)"
 fi
@@ -105,6 +131,7 @@ for input_path in "$@"; do
   output_path="${input_path:r}.html"
   input_dir="${input_path:h}"
   prepared_path="$(preprocess_markdown "$input_path")"
+  prepared_path="$(preprocess_mermaid "$prepared_path")"
   render_dir="$(mktemp -d "${TMPDIR:-/tmp}/md-to-html.rendered.XXXXXX")"
   TMP_DIRS+=("$render_dir")
   temp_html="$render_dir/rendered.html"

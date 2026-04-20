@@ -11,19 +11,22 @@ from pathlib import Path
 STYLE = """
 <style>
   :root {
-    --bg: #f4efe5;
-    --paper: #fffdf8;
-    --ink: #1f2937;
-    --muted: #667085;
-    --line: #e7dcc9;
-    --accent: #b45309;
-    --accent-strong: #92400e;
-    --shadow: 0 24px 70px rgba(105, 74, 32, 0.14);
+    --bg: #eef2f7;
+    --paper: #ffffff;
+    --ink: #1e293b;
+    --muted: #64748b;
+    --line: #e2e8f0;
+    --accent: #2563eb;
+    --accent-dark: #1d4ed8;
+    --accent-bg: #eff6ff;
+    --header-from: #1e3a5f;
+    --header-to: #2563eb;
+    --shadow: 0 24px 80px rgba(30, 58, 138, 0.13);
     --radius: 24px;
-    --base-font-size: 19px;
-    --font-size: 19px;
+    --base-font-size: 20px;
+    --font-size: 20px;
     --deck-max-width: 1100px;
-    --deck-fullscreen-width: 94vw;
+    --deck-fullscreen-width: min(96vw, 1320px);
     --content-width: min(var(--deck-max-width), calc(100vw - 72px));
     --text-column-width: min(44em, 100%);
     --wide-column-width: min(56em, 100%);
@@ -35,21 +38,20 @@ STYLE = """
   html {
     font-size: var(--font-size);
     scroll-behavior: smooth;
-    background:
-      radial-gradient(circle at top left, rgba(245, 158, 11, 0.10), transparent 22rem),
-      radial-gradient(circle at bottom right, rgba(180, 83, 9, 0.12), transparent 26rem),
-      linear-gradient(180deg, #fbf8f1, #f2eadb 72%, #efe4d2);
+    background: var(--bg);
   }
 
   body {
     margin: 0;
     min-height: 100vh;
     color: var(--ink);
-    font-family: "Georgia", "Iowan Old Style", "Palatino Linotype", serif;
-    line-height: 1.72;
+    font-family: -apple-system, "PingFang SC", "Hiragino Sans GB", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.78;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
   }
+
+  /* ── shell & stage ── */
 
   .page-shell {
     min-height: 100vh;
@@ -65,6 +67,8 @@ STYLE = """
     margin: 0 auto;
     max-width: 100%;
   }
+
+  /* ── toolbar ── */
 
   .toolbar {
     position: sticky;
@@ -83,121 +87,174 @@ STYLE = """
     appearance: none;
     border: 0;
     border-radius: 999px;
-    padding: 12px 18px;
-    font: 600 14px/1.1 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    letter-spacing: 0.01em;
+    padding: 11px 22px;
+    font: 600 14px/1.1 -apple-system, "PingFang SC", sans-serif;
+    letter-spacing: 0.03em;
     cursor: pointer;
-    color: #fffdf9;
-    background: linear-gradient(135deg, var(--accent), var(--accent-strong));
-    box-shadow: 0 14px 32px rgba(146, 64, 14, 0.22);
+    color: #ffffff;
+    background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+    box-shadow: 0 8px 24px rgba(37, 99, 235, 0.30);
+    transition: transform 0.15s ease, filter 0.15s ease;
   }
 
-  .toolbar button:hover {
-    transform: translateY(-1px);
-    filter: brightness(1.02);
-  }
-
-  .toolbar button:active {
-    transform: translateY(0);
-  }
+  .toolbar button:hover { transform: translateY(-1px); filter: brightness(1.07); }
+  .toolbar button:active { transform: translateY(0); }
 
   .zoom-panel {
     display: inline-flex;
     align-items: center;
     gap: 10px;
-    padding: 10px 14px;
+    padding: 9px 16px;
     border-radius: 999px;
-    background: rgba(255, 252, 247, 0.9);
-    border: 1px solid rgba(197, 168, 130, 0.3);
-    box-shadow: 0 14px 32px rgba(105, 74, 32, 0.12);
-    font: 600 13px/1.1 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    color: #7c4a17;
+    background: rgba(255, 255, 255, 0.92);
+    border: 1px solid var(--line);
+    box-shadow: 0 4px 16px rgba(30, 41, 59, 0.08);
+    font: 600 13px/1.1 -apple-system, "PingFang SC", sans-serif;
+    color: var(--accent-dark);
     backdrop-filter: blur(14px);
   }
 
-  .zoom-panel select {
+  .zoom-slider {
+    -webkit-appearance: none;
     appearance: none;
-    border: 1px solid rgba(197, 168, 130, 0.45);
-    background: #fffdf8;
-    color: #8a3b12;
+    width: 130px;
+    height: 4px;
     border-radius: 999px;
-    padding: 7px 30px 7px 12px;
-    font: inherit;
+    background: linear-gradient(90deg, var(--accent) var(--pct, 20%), var(--line) var(--pct, 20%));
+    outline: none;
+    cursor: pointer;
+    border: none;
+  }
+
+  .zoom-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);
+    cursor: pointer;
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+  }
+
+  .zoom-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+    box-shadow: 0 3px 12px rgba(37, 99, 235, 0.45);
+  }
+
+  .zoom-slider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: none;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);
     cursor: pointer;
   }
 
   .zoom-value {
-    min-width: 3.4em;
+    min-width: 3.6em;
     text-align: right;
-    color: #8a3b12;
+    color: var(--accent-dark);
+    font-variant-numeric: tabular-nums;
   }
+
+  /* ── card ── */
 
   .deck {
     width: 100%;
-    margin: 0;
-    background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(255,252,247,0.98));
-    border: 1px solid rgba(197, 168, 130, 0.28);
+    background: var(--paper);
+    border: 1px solid rgba(226, 232, 240, 0.6);
     border-radius: var(--radius);
     box-shadow: var(--shadow);
     overflow: clip;
   }
 
   .deck-header {
-    padding: 34px 46px 16px;
-    border-bottom: 1px solid rgba(231, 220, 201, 0.78);
-    background:
-      linear-gradient(180deg, rgba(255,255,255,0.78), rgba(255,249,240,0.92)),
-      radial-gradient(circle at top right, rgba(245, 158, 11, 0.10), transparent 18rem);
+    padding: 44px 52px 36px;
+    background: linear-gradient(135deg, var(--header-from) 0%, var(--header-to) 100%);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .deck-header::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 75% 40%, rgba(255,255,255,0.10), transparent 55%);
+    pointer-events: none;
   }
 
   .deck-title {
+    position: relative;
+    z-index: 1;
     margin: 0;
-    font-size: clamp(1.45em, 2.7vw, 2.15em);
-    line-height: 1.12;
-    color: #1e293b;
+    font-size: clamp(1.5em, 2.8vw, 2.2em);
+    font-weight: 800;
+    line-height: 1.15;
+    color: #ffffff;
     text-align: center;
-    max-width: 30em;
+    letter-spacing: -0.02em;
+    max-width: 28em;
     margin-left: auto;
     margin-right: auto;
+    text-shadow: 0 2px 14px rgba(0, 0, 0, 0.20);
   }
 
   .deck-body {
-    padding: 24px 46px 56px;
+    padding: 36px 52px 64px;
   }
 
   .deck-body > *:first-child { margin-top: 0; }
   .deck-body > *:last-child { margin-bottom: 0; }
 
-  .deck-body > h2:first-child,
-  .deck-body > h3:first-child,
-  .deck-body > p:first-child {
-    margin-top: 0;
-  }
+  /* ── headings ── */
 
   h1, h2, h3, h4 {
-    line-height: 1.18;
-    letter-spacing: -0.015em;
-    color: #162033;
+    line-height: 1.2;
+    color: var(--ink);
     page-break-after: avoid;
+    font-weight: 700;
+    letter-spacing: -0.015em;
   }
 
-  h1 { font-size: 2.2em; margin: 1.5em 0 0.55em; }
+  h1 {
+    font-size: 2.2em;
+    font-weight: 800;
+    margin: 1.6em 0 0.6em;
+  }
+
   h2 {
-    font-size: 1.65em;
-    margin: 1.6em 0 0.68em;
-    padding-bottom: 0.25em;
-    border-bottom: 1px solid rgba(231, 220, 201, 0.85);
+    font-size: 1.7em;
+    font-weight: 700;
+    margin: 2em 0 0.75em;
+    padding: 0.22em 1em 0.22em 0.8em;
+    border-left: 5px solid var(--accent);
+    border-bottom: none;
+    background: linear-gradient(90deg, rgba(37, 99, 235, 0.07) 0%, transparent 65%);
+    border-radius: 0 10px 10px 0;
     text-align: left;
   }
+
   h3 {
-    font-size: 1.34em;
-    margin: 1.35em 0 0.55em;
+    font-size: 1.32em;
+    font-weight: 600;
+    margin: 1.7em 0 0.6em;
+    color: var(--accent);
     text-align: left;
   }
-  h4 { font-size: 1.08em; margin: 1.25em 0 0.45em; }
+
+  h4 {
+    font-size: 1.08em;
+    font-weight: 600;
+    margin: 1.3em 0 0.5em;
+  }
+
+  /* ── column widths ── */
 
   p, li, blockquote { font-size: 1rem; }
-  p, ul, ol, blockquote, pre, table, figure { margin: 0 0 1em; }
+  p, ul, ol, blockquote, pre, table, figure { margin: 0 0 1.1em; }
 
   .deck-body > p,
   .deck-body > ul,
@@ -214,69 +271,54 @@ STYLE = """
     width: var(--text-column-width);
     margin-left: auto;
     margin-right: auto;
-    padding-left: 1.2em;
-    padding-right: 1.2em;
   }
 
   .deck-body > p,
-  .deck-body > li {
-    text-wrap: pretty;
-  }
+  .deck-body > li { text-wrap: pretty; }
 
   .deck-body > p.meta-line {
     width: min(48em, 100%);
-    font-size: 0.9rem;
+    font-size: 0.88rem;
     color: var(--muted);
   }
 
-  .deck-body > p.image-filename {
-    width: var(--wide-column-width);
-    margin-top: 0.35em;
-    text-align: center;
-    font-size: 0.88rem;
-    color: rgba(92, 100, 114, 0.62);
-    letter-spacing: 0.01em;
-  }
+  /* ── lists ── */
 
-  .deck-body img[aria-label^="file-"] {
-    margin-bottom: 0.35em;
-  }
+  ul, ol { padding-left: 1.5em; }
+  li + li { margin-top: 0.4em; }
 
-  .deck-body img[aria-label^="file-"] + figcaption,
-  .deck-body figure > p:has(> img[aria-label^="file-"]) + p {
-    text-align: center;
-    font-size: 0.88rem;
-    color: rgba(92, 100, 114, 0.62);
-  }
-
-  ul, ol { padding-left: 1.35em; }
-  li + li { margin-top: 0.32em; }
+  /* ── inline ── */
 
   a {
-    color: #8a3b12;
+    color: var(--accent);
     text-decoration-thickness: 0.08em;
-    text-underline-offset: 0.14em;
+    text-underline-offset: 0.15em;
   }
 
-  strong { color: #111827; }
+  strong { color: #0f172a; font-weight: 700; }
+
+  /* ── blockquote ── */
 
   blockquote {
     margin-left: 0;
-    padding: 1em 1.1em 1em 1.2em;
-    border-left: 4px solid rgba(180, 83, 9, 0.45);
-    background: rgba(251, 243, 228, 0.9);
+    padding: 1.1em 1.3em 1.1em 1.3em;
+    border-left: 5px solid var(--accent);
+    background: var(--accent-bg);
     border-radius: 0 16px 16px 0;
-    color: #4b5563;
+    color: #1e3a8a;
+    font-style: normal;
   }
+
+  /* ── images ── */
 
   img {
     display: block;
     width: auto;
     max-width: 100%;
     max-height: 78vh;
-    margin: 1.1em auto;
-    border-radius: 18px;
-    box-shadow: 0 16px 40px rgba(89, 66, 33, 0.16);
+    margin: 1.2em auto;
+    border-radius: 16px;
+    box-shadow: 0 12px 40px rgba(30, 41, 59, 0.14);
     page-break-inside: avoid;
     cursor: zoom-in;
   }
@@ -289,56 +331,118 @@ STYLE = """
     margin-right: auto;
   }
 
+  .deck-body img[aria-label^="file-"] { margin-bottom: 0.35em; }
+
+  .deck-body figure figcaption,
+  .deck-body img[aria-label^="file-"] + figcaption,
+  .deck-body figure > p:has(> img[aria-label^="file-"]) + p {
+    text-align: center;
+    font-size: 0.84rem;
+    color: var(--muted);
+    letter-spacing: 0.03em;
+    margin-top: -0.4em;
+  }
+
+  .deck-body > p.image-filename {
+    width: var(--wide-column-width);
+    margin-top: 0.35em;
+    text-align: center;
+    font-size: 0.84rem;
+    color: var(--muted);
+  }
+
+  /* ── table ── */
+
   table {
-    width: 100%;
     border-collapse: collapse;
-    background: rgba(255, 252, 246, 0.9);
-    overflow: hidden;
+    background: var(--paper);
     border-radius: 16px;
     border-style: hidden;
-    box-shadow: 0 0 0 1px rgba(220, 204, 178, 0.88);
+    box-shadow: 0 0 0 1px var(--line);
+    overflow: hidden;
+  }
+
+  .deck-body > table {
+    width: auto;
+    max-width: var(--wide-column-width);
+    margin-left: auto;
+    margin-right: auto;
   }
 
   th, td {
-    padding: 0.72em 0.82em;
-    border: 1px solid rgba(220, 204, 178, 0.88);
+    padding: 0.78em 1.05em;
+    border: 1px solid var(--line);
     vertical-align: top;
   }
 
+  thead tr { background: #1e3a5f; }
+
   th {
-    background: rgba(247, 232, 208, 0.92);
-    text-align: left;
+    background: transparent;
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 0.93em;
+    letter-spacing: 0.03em;
+    border-color: rgba(255, 255, 255, 0.12);
   }
+
+  tbody tr:nth-child(even) td { background: #f0f7ff; }
+
+  tbody tr:hover td {
+    background: #dbeafe;
+    transition: background 0.12s ease;
+  }
+
+  /* ── code ── */
 
   code, pre, kbd, samp {
     font-family: "SFMono-Regular", "Menlo", "Consolas", monospace;
   }
 
   code {
-    padding: 0.16em 0.32em;
-    border-radius: 8px;
-    background: rgba(245, 238, 223, 0.94);
-    font-size: 0.92em;
+    padding: 0.17em 0.38em;
+    border-radius: 6px;
+    background: #f1f5f9;
+    font-size: 0.88em;
+    color: #be185d;
   }
 
   pre {
-    padding: 1em 1.1em;
+    padding: 1.1em 1.3em;
     overflow-x: auto;
-    border-radius: 18px;
-    background: #1f2937;
-    color: #f9fafb;
-    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05);
+    border-radius: 16px;
+    background: #1e293b;
+    color: #e2e8f0;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04);
     page-break-inside: avoid;
+    font-size: 0.88em;
+    line-height: 1.65;
+  }
+
+  pre code {
+    padding: 0;
+    background: transparent;
+    color: inherit;
+    font-size: inherit;
   }
 
   .deck-body > pre,
   .deck-body > div.sourceCode {
     width: var(--wide-column-width);
+    margin-left: auto;
+    margin-right: auto;
   }
 
-  .deck-body > table {
-    width: var(--wide-column-width);
+  /* ── hr ── */
+
+  hr {
+    border: 0;
+    height: 2px;
+    margin: 2.4em 0;
+    background: linear-gradient(90deg, transparent, rgba(37, 99, 235, 0.35), transparent);
   }
+
+  /* ── lightbox ── */
 
   .image-lightbox {
     position: fixed;
@@ -348,13 +452,11 @@ STYLE = """
     align-items: center;
     justify-content: center;
     padding: 28px;
-    background: rgba(9, 14, 24, 0.88);
+    background: rgba(9, 14, 24, 0.90);
     backdrop-filter: blur(10px);
   }
 
-  .image-lightbox.is-open {
-    display: flex;
-  }
+  .image-lightbox.is-open { display: flex; }
 
   .image-lightbox img {
     width: 94vw;
@@ -364,7 +466,7 @@ STYLE = """
     object-fit: contain;
     margin: 0;
     border-radius: 16px;
-    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.42);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
     cursor: zoom-out;
     background: #fff;
   }
@@ -377,28 +479,15 @@ STYLE = """
     border: 0;
     border-radius: 999px;
     padding: 11px 15px;
-    font: 600 14px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font: 600 14px/1 -apple-system, "PingFang SC", sans-serif;
     color: #fff;
-    background: rgba(255, 255, 255, 0.14);
+    background: rgba(255, 255, 255, 0.15);
     cursor: pointer;
   }
 
-  .image-lightbox-close:hover {
-    background: rgba(255, 255, 255, 0.22);
-  }
+  .image-lightbox-close:hover { background: rgba(255, 255, 255, 0.24); }
 
-  pre code {
-    padding: 0;
-    background: transparent;
-    color: inherit;
-  }
-
-  hr {
-    border: 0;
-    height: 1px;
-    margin: 2.1em 0;
-    background: linear-gradient(90deg, transparent, rgba(180, 83, 9, 0.34), transparent);
-  }
+  /* ── fullscreen ── */
 
   html.fullscreen-active,
   html.fullscreen-active body,
@@ -406,18 +495,17 @@ STYLE = """
   :fullscreen,
   :fullscreen body,
   :fullscreen .page-shell {
-    background:
-      radial-gradient(circle at top left, rgba(245, 158, 11, 0.08), transparent 20rem),
-      linear-gradient(180deg, #171f2d, #0f1724);
+    background: linear-gradient(180deg, #0f172a, #1e293b);
   }
 
   .fullscreen-active .page-shell {
-    padding: 10px;
+    padding: 10px 12px 24px;
     width: 100%;
   }
 
   .fullscreen-active .stage {
     width: min(var(--deck-fullscreen-width), calc(100vw - 24px));
+    max-width: calc(100vw - 24px);
   }
 
   .fullscreen-active .toolbar {
@@ -425,21 +513,15 @@ STYLE = """
     margin-bottom: 12px;
   }
 
-  .fullscreen-active .deck {
-    width: 100%;
-  }
+  .fullscreen-active .deck { width: 100%; }
 
-  .fullscreen-active .deck-header {
-    padding: 28px 40px 12px;
-  }
+  .fullscreen-active .deck-header { padding: 32px 44px 24px; }
 
-  .fullscreen-active .deck-body {
-    padding: 20px 40px 44px;
-  }
+  .fullscreen-active .deck-body { padding: 24px 44px 48px; }
 
-  .fullscreen-active .deck-body img {
-    max-height: 82vh;
-  }
+  .fullscreen-active .deck-body img { max-height: 82vh; }
+
+  /* ── responsive ── */
 
   @media (max-width: 720px) {
     html { font-size: 17px; }
@@ -448,33 +530,23 @@ STYLE = """
     .toolbar, .deck { width: 100%; }
     .toolbar { top: 8px; margin-bottom: 12px; }
     .toolbar button, .zoom-panel { width: 100%; }
-    .deck-header { padding: 24px 20px 10px; }
-    .deck-body { padding: 16px 20px 28px; }
+    .deck-header { padding: 28px 22px 20px; }
+    .deck-body { padding: 18px 22px 32px; }
     .zoom-panel { justify-content: space-between; }
     img { max-height: 52vh; }
+    h2 { padding: 0.2em 0.8em 0.2em 0.6em; }
   }
 
+  /* ── print ── */
+
   @media print {
-    @page {
-      size: A4 portrait;
-      margin: 14mm 16mm;
-    }
+    @page { size: A4 portrait; margin: 14mm 16mm; }
 
-    html, body {
-      background: #fff !important;
-    }
+    html, body { background: #fff !important; }
 
-    .page-shell {
-      padding: 0 !important;
-    }
-
-    .toolbar {
-      display: none !important;
-    }
-
-    .image-lightbox {
-      display: none !important;
-    }
+    .page-shell { padding: 0 !important; }
+    .toolbar { display: none !important; }
+    .image-lightbox { display: none !important; }
 
     .deck {
       width: 100% !important;
@@ -486,8 +558,14 @@ STYLE = """
 
     .deck-header {
       padding: 0 0 10mm !important;
-      border-bottom: 1px solid #c8c8c8 !important;
+      border-bottom: 2px solid #1e3a5f !important;
       background: transparent !important;
+    }
+
+    .deck-title {
+      font-size: 22pt !important;
+      color: #1e3a5f !important;
+      text-shadow: none !important;
     }
 
     .deck-body {
@@ -496,17 +574,16 @@ STYLE = """
       line-height: 1.6 !important;
     }
 
-    .deck-title {
-      font-size: 24pt !important;
-    }
-
     h1 { font-size: 20pt !important; }
-    h2 { font-size: 16pt !important; }
-    h3 { font-size: 13pt !important; }
-
-    p, li, blockquote, table {
-      font-size: 11pt !important;
+    h2 {
+      font-size: 15pt !important;
+      background: none !important;
+      border-left-color: #1e3a5f !important;
+      padding-left: 0.5em !important;
     }
+    h3 { font-size: 13pt !important; color: #1d4ed8 !important; }
+
+    p, li, blockquote, table { font-size: 11pt !important; }
 
     pre, code {
       white-space: pre-wrap !important;
@@ -517,13 +594,13 @@ STYLE = """
       max-width: 100% !important;
       max-height: 180mm !important;
       box-shadow: none !important;
-      border: 1px solid #e6e6e6 !important;
+      border: 1px solid #e2e8f0 !important;
     }
 
-    a {
-      color: inherit !important;
-      text-decoration: none !important;
-    }
+    a { color: inherit !important; text-decoration: none !important; }
+
+    thead tr { background: #1e3a5f !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    th { color: #ffffff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   }
 </style>
 """
@@ -534,15 +611,14 @@ SCRIPT = """
   (() => {
     const root = document.documentElement;
     const btn = document.getElementById('fullscreen-toggle');
-    const zoomSelect = document.getElementById('zoom-select');
+    const zoomSlider = document.getElementById('zoom-slider');
     const zoomValue = document.getElementById('zoom-value');
     const lightbox = document.getElementById('image-lightbox');
     const lightboxImage = document.getElementById('image-lightbox-img');
     const lightboxClose = document.getElementById('image-lightbox-close');
-    const zoomPresets = [90, 100, 110, 125, 150, 175, 200];
-    const baseFontSize = 19;
+    const baseFontSize = 20;
     const baseDeckWidth = 1100;
-    const fullscreenViewportRatio = 0.94;
+    const fullscreenViewportRatio = 0.96;
 
     function syncButton() {
       const active = !!document.fullscreenElement;
@@ -558,7 +634,7 @@ SCRIPT = """
       const fontSize = Math.round(baseFontSize * scale * 100) / 100;
       const widthScale = 1 + ((scale - 1) * 0.92);
       const deckWidth = Math.round(baseDeckWidth * widthScale);
-      const fullscreenWidth = `${Math.max(70, Math.min(94, fullscreenViewportRatio * widthScale * 100)).toFixed(1)}vw`;
+      const fullscreenWidth = `${Math.max(70, Math.min(96, fullscreenViewportRatio * widthScale * 100)).toFixed(1)}vw`;
 
       root.style.setProperty('--zoom-scale', String(scale));
       root.style.setProperty('--font-size', `${fontSize}px`);
@@ -568,8 +644,13 @@ SCRIPT = """
       if (zoomValue) {
         zoomValue.textContent = `${numericValue}%`;
       }
-      if (zoomSelect && String(zoomSelect.value) != String(numericValue)) {
-        zoomSelect.value = String(numericValue);
+      if (zoomSlider && Number(zoomSlider.value) !== numericValue) {
+        zoomSlider.value = String(numericValue);
+      }
+      // update slider fill
+      if (zoomSlider) {
+        const pct = ((numericValue - 75) / (250 - 75) * 100).toFixed(1);
+        zoomSlider.style.setProperty('--pct', `${pct}%`);
       }
     }
 
@@ -607,8 +688,8 @@ SCRIPT = """
       btn.addEventListener('click', toggleFullscreen);
     }
 
-    if (zoomSelect) {
-      zoomSelect.addEventListener('change', (event) => {
+    if (zoomSlider) {
+      zoomSlider.addEventListener('input', (event) => {
         syncZoom(event.target.value);
       });
     }
@@ -680,17 +761,9 @@ def main() -> int:
   <div class="page-shell">
     <div class="stage">
       <div class="toolbar">
-        <label class="zoom-panel" for="zoom-select">
+        <label class="zoom-panel" for="zoom-slider">
           <span>缩放</span>
-          <select id="zoom-select">
-            <option value="90">90%</option>
-            <option value="100" selected>100%</option>
-            <option value="110">110%</option>
-            <option value="125">125%</option>
-            <option value="150">150%</option>
-            <option value="175">175%</option>
-            <option value="200">200%</option>
-          </select>
+          <input id="zoom-slider" class="zoom-slider" type="range" min="75" max="250" step="5" value="100" />
           <span id="zoom-value" class="zoom-value">100%</span>
         </label>
         <button id="fullscreen-toggle" type="button">全屏展示</button>

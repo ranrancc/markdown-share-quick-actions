@@ -41,6 +41,27 @@ def set_size(run_props: ET.Element, size_half_points: int) -> None:
     sz_cs.set(qn("val"), str(size_half_points))
 
 
+def set_alignment(p_pr: ET.Element, alignment: str) -> None:
+    jc = ensure_child(p_pr, "jc")
+    jc.set(qn("val"), alignment)
+
+
+def set_left_border(p_pr: ET.Element, color: str, size: int = 18, space: int = 10) -> None:
+    p_bdr = ensure_child(p_pr, "pBdr")
+    left = ensure_child(p_bdr, "left")
+    left.set(qn("val"), "single")
+    left.set(qn("sz"), str(size))
+    left.set(qn("space"), str(space))
+    left.set(qn("color"), color)
+
+
+def remove_italic(r_pr: ET.Element) -> None:
+    for tag in ("i", "iCs"):
+        node = r_pr.find(qn(tag))
+        if node is not None:
+            r_pr.remove(node)
+
+
 def apply_style(
     styles_root: ET.Element,
     style_id: str,
@@ -51,6 +72,9 @@ def apply_style(
     color: str | None = None,
     bold: bool = False,
     italic: bool = False,
+    no_italic: bool = False,
+    alignment: str | None = None,
+    border_left: str | None = None,
     spacing_before: int | None = None,
     spacing_after: int | None = None,
     line: int | None = None,
@@ -78,6 +102,15 @@ def apply_style(
 
     if italic:
         ensure_child(r_pr, "i")
+
+    if no_italic:
+        remove_italic(r_pr)
+
+    if alignment:
+        set_alignment(p_pr, alignment)
+
+    if border_left:
+        set_left_border(p_pr, border_left)
 
     if spacing_before is not None or spacing_after is not None or line is not None:
         spacing = ensure_child(p_pr, "spacing")
@@ -110,10 +143,11 @@ def apply_style(
 def update_styles_xml(styles_xml: bytes) -> bytes:
     root = ET.fromstring(styles_xml)
 
+    # ── document defaults ──────────────────────────────────────────────────
     doc_defaults = ensure_child(root, "docDefaults")
     rpr_default = ensure_child(doc_defaults, "rPrDefault")
     default_rpr = ensure_child(rpr_default, "rPr")
-    set_fonts(default_rpr, "Calibri", "宋体")
+    set_fonts(default_rpr, "Garamond", "宋体")
     set_size(default_rpr, 24)
     lang = ensure_child(default_rpr, "lang")
     lang.set(qn("val"), "en-US")
@@ -123,198 +157,139 @@ def update_styles_xml(styles_xml: bytes) -> bytes:
     default_ppr = ensure_child(ppr_default, "pPr")
     spacing = ensure_child(default_ppr, "spacing")
     spacing.set(qn("before"), "0")
-    spacing.set(qn("after"), "140")
-    spacing.set(qn("line"), "336")
+    spacing.set(qn("after"), "180")
+    spacing.set(qn("line"), "360")
     spacing.set(qn("lineRule"), "auto")
-    ind = ensure_child(default_ppr, "ind")
-    ind.set(qn("firstLine"), "420")
 
+    # ── body text ──────────────────────────────────────────────────────────
+    # No first-line indent: use paragraph spacing instead (international style)
     apply_style(
-        root,
-        "Normal",
-        ascii_font="Georgia",
-        east_asia_font="宋体",
-        size=24,
-        color="222222",
-        spacing_after=140,
-        line=336,
-        indent_first_line=420,
-    )
-    apply_style(
-        root,
-        "Title",
-        ascii_font="Calibri",
-        east_asia_font="微软雅黑",
-        size=40,
-        color="1F3A5F",
-        bold=True,
-        spacing_before=0,
-        spacing_after=220,
-        line=300,
-    )
-    apply_style(
-        root,
-        "Subtitle",
-        ascii_font="Calibri",
-        east_asia_font="等线",
-        size=24,
-        color="5C6B7A",
-        spacing_before=0,
-        spacing_after=180,
-        line=280,
-    )
-    apply_style(
-        root,
-        "Heading1",
-        ascii_font="Calibri",
-        east_asia_font="微软雅黑",
-        size=32,
-        color="1F4E79",
-        bold=True,
-        spacing_before=260,
-        spacing_after=140,
-        line=300,
-    )
-    apply_style(
-        root,
-        "Heading2",
-        ascii_font="Calibri",
-        east_asia_font="等线",
-        size=27,
-        color="285A6E",
-        bold=True,
-        spacing_before=220,
-        spacing_after=100,
-        line=288,
-    )
-    apply_style(
-        root,
-        "Heading3",
-        ascii_font="Calibri",
-        east_asia_font="等线",
-        size=24,
-        color="4B5D73",
-        bold=True,
-        spacing_before=180,
-        spacing_after=60,
-        line=288,
-    )
-    apply_style(
-        root,
-        "BlockText",
-        ascii_font="Georgia",
-        east_asia_font="楷体",
-        size=23,
-        color="5A5A5A",
-        italic=True,
-        spacing_before=60,
-        spacing_after=140,
-        line=320,
-        indent_left=520,
-    )
-    apply_style(
-        root,
-        "SourceCode",
-        ascii_font="Consolas",
-        east_asia_font="等线",
-        size=20,
-        color="2D3748",
-        spacing_before=80,
-        spacing_after=140,
-        line=260,
-        shading_fill="F3F5F7",
-    )
-    apply_style(
-        root,
-        "Table",
-        ascii_font="Calibri",
-        east_asia_font="宋体",
-        size=21,
-        spacing_after=0,
-        line=260,
-    )
-    apply_style(
-        root,
-        "Compact",
-        ascii_font="Calibri",
-        east_asia_font="宋体",
-        size=21,
-        color="222222",
-        spacing_before=0,
-        spacing_after=0,
-        line=240,
+        root, "Normal",
+        ascii_font="Garamond", east_asia_font="宋体",
+        size=24, color="1E293B",
+        spacing_after=180, line=360,
         indent_first_line=0,
     )
+
+    # ── title / subtitle ───────────────────────────────────────────────────
     apply_style(
-        root,
-        "Caption",
-        ascii_font="Calibri",
-        east_asia_font="等线",
-        size=20,
-        color="6C7883",
-        italic=True,
-        spacing_after=60,
-        line=260,
+        root, "Title",
+        ascii_font="Times New Roman", east_asia_font="黑体",
+        size=48, color="111827",
+        bold=True, alignment="center",
+        spacing_before=0, spacing_after=260, line=300,
     )
     apply_style(
-        root,
-        "ImageCaption",
-        ascii_font="Calibri",
-        east_asia_font="等线",
-        size=20,
-        color="6C7883",
-        italic=True,
-        spacing_after=60,
-        line=260,
-    )
-    apply_style(
-        root,
-        "TableCaption",
-        ascii_font="Calibri",
-        east_asia_font="等线",
-        size=20,
-        color="6C7883",
-        italic=True,
-        spacing_after=60,
-        line=260,
-    )
-    apply_style(
-        root,
-        "Hyperlink",
-        ascii_font="Calibri",
-        east_asia_font="等线",
-        size=22,
-        color="1E5A96",
-    )
-    apply_style(
-        root,
-        "TOCHeading",
-        ascii_font="Calibri",
-        east_asia_font="微软雅黑",
-        size=26,
-        color="1F4E79",
-        bold=True,
-        spacing_before=180,
-        spacing_after=100,
-        line=288,
+        root, "Subtitle",
+        ascii_font="Calibri", east_asia_font="黑体",
+        size=26, color="4B5563",
+        alignment="center",
+        spacing_before=0, spacing_after=200, line=280,
     )
 
-    for style_id in ("TitleChar", "SubtitleChar", "Heading1Char", "Heading2Char", "Heading3Char", "VerbatimChar"):
+    # ── headings: size + weight only, no color decoration ─────────────────
+    # H1: 20pt, centered — chapter-level weight
+    apply_style(
+        root, "Heading1",
+        ascii_font="Calibri", east_asia_font="黑体",
+        size=40, color="111827",
+        bold=True, alignment="center",
+        spacing_before=560, spacing_after=280, line=300,
+    )
+    # H2: 16pt, left — section heading, clearly smaller than H1
+    apply_style(
+        root, "Heading2",
+        ascii_font="Calibri", east_asia_font="黑体",
+        size=32, color="111827",
+        bold=True,
+        spacing_before=420, spacing_after=160, line=300,
+    )
+    # H3: 14pt, left, dark gray — subsection, same weight but visibly smaller
+    apply_style(
+        root, "Heading3",
+        ascii_font="Calibri", east_asia_font="黑体",
+        size=28, color="374151",
+        bold=True,
+        spacing_before=300, spacing_after=100, line=288,
+    )
+
+    # ── blockquote ─────────────────────────────────────────────────────────
+    # No italic for Chinese readability; classic left indent
+    apply_style(
+        root, "BlockText",
+        ascii_font="Garamond", east_asia_font="楷体",
+        size=23, color="475569",
+        no_italic=True,
+        spacing_before=80, spacing_after=160, line=340,
+        indent_left=720,
+    )
+
+    # ── code ───────────────────────────────────────────────────────────────
+    apply_style(
+        root, "SourceCode",
+        ascii_font="Consolas", east_asia_font="等线",
+        size=20, color="1E293B",
+        spacing_before=100, spacing_after=160, line=260,
+        shading_fill="F1F5F9",
+    )
+
+    # ── table & compact ────────────────────────────────────────────────────
+    apply_style(
+        root, "Table",
+        ascii_font="Calibri", east_asia_font="宋体",
+        size=22, spacing_after=0, line=268,
+    )
+    apply_style(
+        root, "Compact",
+        ascii_font="Calibri", east_asia_font="宋体",
+        size=22, color="1E293B",
+        spacing_before=0, spacing_after=0, line=240,
+        indent_first_line=0,
+    )
+
+    # ── captions ───────────────────────────────────────────────────────────
+    # No italic — italic Chinese looks cluttered
+    for cap_id in ("Caption", "ImageCaption", "TableCaption"):
+        apply_style(
+            root, cap_id,
+            ascii_font="Calibri", east_asia_font="等线",
+            size=19, color="64748B",
+            no_italic=True, alignment="center",
+            spacing_before=40, spacing_after=80, line=260,
+        )
+
+    # ── hyperlink ──────────────────────────────────────────────────────────
+    apply_style(
+        root, "Hyperlink",
+        ascii_font="Calibri", east_asia_font="等线",
+        size=24, color="2563EB",
+    )
+
+    # ── TOC ────────────────────────────────────────────────────────────────
+    apply_style(
+        root, "TOCHeading",
+        ascii_font="Calibri", east_asia_font="微软雅黑",
+        size=28, color="1E3A5F",
+        bold=True,
+        spacing_before=200, spacing_after=120, line=288,
+    )
+
+    # ── char styles ────────────────────────────────────────────────────────
+    char_map = {
+        "TitleChar":    ("Calibri", "微软雅黑", 44),
+        "SubtitleChar": ("Calibri", "微软雅黑", 24),
+        "Heading1Char": ("Calibri", "微软雅黑", 38),
+        "Heading2Char": ("Calibri", "微软雅黑", 30),
+        "Heading3Char": ("Calibri", "微软雅黑", 26),
+        "VerbatimChar": ("Consolas", "等线",    20),
+    }
+    for style_id, (latin, cjk, sz) in char_map.items():
         style = root.find(f"./{qn('style')}[@{qn('styleId')}='{style_id}']")
         if style is None:
             continue
         r_pr = ensure_child(style, "rPr")
-        if style_id == "VerbatimChar":
-            set_fonts(r_pr, "Consolas", "等线")
-            set_size(r_pr, 20)
-        elif style_id == "TitleChar":
-            set_fonts(r_pr, "Calibri", "微软雅黑")
-            set_size(r_pr, 40)
-        elif style_id == "SubtitleChar":
-            set_fonts(r_pr, "Calibri", "等线")
-            set_size(r_pr, 24)
-        else:
-            set_fonts(r_pr, "Calibri", "等线")
+        set_fonts(r_pr, latin, cjk)
+        set_size(r_pr, sz)
 
     return ET.tostring(root, encoding="utf-8", xml_declaration=True)
 
@@ -324,12 +299,12 @@ def update_document_xml(document_xml: bytes) -> bytes:
     sect_pr = root.find(f".//{qn('sectPr')}")
     if sect_pr is not None:
         pg_mar = ensure_child(sect_pr, "pgMar")
-        pg_mar.set(qn("top"), "1320")
-        pg_mar.set(qn("right"), "1260")
-        pg_mar.set(qn("bottom"), "1320")
-        pg_mar.set(qn("left"), "1260")
-        pg_mar.set(qn("header"), "720")
-        pg_mar.set(qn("footer"), "720")
+        pg_mar.set(qn("top"), "1701")    # 3.0 cm
+        pg_mar.set(qn("right"), "1440")  # 2.54 cm
+        pg_mar.set(qn("bottom"), "1701") # 3.0 cm
+        pg_mar.set(qn("left"), "1800")   # 3.17 cm
+        pg_mar.set(qn("header"), "851")
+        pg_mar.set(qn("footer"), "851")
         pg_mar.set(qn("gutter"), "0")
 
     # Keep the sample table in the reference document readable; actual exported

@@ -15,6 +15,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 WORD_TEMPLATE = ROOT / "md-to-word-quick-action" / "reference.docx"
 HTML_BUILDER = ROOT / "md-to-html-quick-action" / "build_pretty_html.py"
+MERMAID_PRERENDER = ROOT / "mermaid-prerender.py"
 MARKDOWN_SUFFIXES = {".md", ".markdown"}
 
 
@@ -35,6 +36,50 @@ def find_pandoc() -> str:
         if Path(expanded).exists() or shutil.which(expanded):
             return expanded
     raise RuntimeError("pandoc was not found. Install pandoc first: https://pandoc.org/installing.html")
+
+
+def preprocess_mermaid(src: Path, tmp_dir: Path, fmt: str) -> Path:
+    """Render ```mermaid blocks to images; return path to rewritten MD."""
+    if not MERMAID_PRERENDER.exists():
+        return src
+    text = src.read_text(encoding="utf-8")
+    if "```mermaid" not in text:
+        return src
+    out_md = tmp_dir / "mermaid-rendered.md"
+    assets_dir = tmp_dir / "mermaid-assets"
+    result = subprocess.run(
+        [sys.executable, str(MERMAID_PRERENDER), str(src), str(out_md), str(assets_dir), fmt],
+        capture_output=True,
+    )
+    if result.returncode == 0 and out_md.exists():
+        return out_md
+    return src
+
+
+def postprocess_docx(dest: Path) -> None:
+    """Center tables and image captions in a pandoc-generated docx."""
+    try:
+        from docx import Document
+        from docx.enum.text import WD_ALIGN_PARAGRAPH
+        from docx.oxml.ns import qn as dqn
+        from docx.oxml import OxmlElement
+    except ImportError:
+        return
+    doc = Document(dest)
+    for table in doc.tables:
+        tblPr = table._tbl.find(dqn("w:tblPr"))
+        if tblPr is None:
+            tblPr = OxmlElement("w:tblPr")
+            table._tbl.insert(0, tblPr)
+        jc = tblPr.find(dqn("w:jc"))
+        if jc is None:
+            jc = OxmlElement("w:jc")
+            tblPr.append(jc)
+        jc.set(dqn("w:val"), "center")
+    for para in doc.paragraphs:
+        if para.style.name == "Image Caption":
+            para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    doc.save(dest)
 
 
 def preprocess_markdown(src: Path, dst: Path) -> None:
@@ -68,17 +113,20 @@ def convert_word(src: Path, output_dir: Path | None, pandoc: str) -> Path:
         raise RuntimeError(f"Missing Word reference template: {WORD_TEMPLATE}")
     dest = output_path(src, "docx", output_dir)
     with tempfile.TemporaryDirectory(prefix="md-share-word.") as tmp:
-        prepared = Path(tmp) / "prepared.md"
+        tmp_dir = Path(tmp)
+        prepared = tmp_dir / "prepared.md"
         preprocess_markdown(src, prepared)
+        ready = preprocess_mermaid(prepared, tmp_dir, "png")
         cmd = [
             pandoc,
-            str(prepared),
+            str(ready),
             "-o",
             str(dest),
             f"--reference-doc={WORD_TEMPLATE}",
             f"--resource-path={src.parent}",
         ]
         subprocess.run(cmd, check=True)
+    postprocess_docx(dest)
     return dest
 
 
@@ -91,9 +139,10 @@ def convert_html(src: Path, output_dir: Path | None, pandoc: str) -> Path:
         prepared = tmp_dir / "prepared.md"
         rendered = tmp_dir / "rendered.html"
         preprocess_markdown(src, prepared)
+        ready = preprocess_mermaid(prepared, tmp_dir, "svg")
         cmd = [
             pandoc,
-            str(prepared),
+            str(ready),
             "-o",
             str(rendered),
             "--standalone",

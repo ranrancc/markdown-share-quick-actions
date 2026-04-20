@@ -1,11 +1,15 @@
 #!/bin/zsh
 
+# Automator strips PATH; restore Homebrew and system tool paths explicitly
+export PATH="/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
+
 set -u
 
 SCRIPT_DIR="${0:A:h}"
 DEFAULT_PANDOC="/opt/homebrew/bin/pandoc"
 PANDOC_BIN="${PANDOC_BIN:-$DEFAULT_PANDOC}"
 TEMPLATE_PATH="${MD_TO_WORD_TEMPLATE:-$SCRIPT_DIR/reference.docx}"
+MERMAID_SCRIPT="$SCRIPT_DIR/../mermaid-prerender.py"
 TMP_DIRS=()
 
 show_alert() {
@@ -17,6 +21,11 @@ show_notification() {
   local title="$1"
   local message="$2"
   /usr/bin/osascript -e "display notification \"${message//\"/\\\"}\" with title \"${title//\"/\\\"}\"" >/dev/null 2>&1 || true
+}
+
+copy_to_clipboard() {
+  local content="$1"
+  printf '%s' "$content" | /usr/bin/pbcopy 2>/dev/null || true
 }
 
 cleanup() {
@@ -65,6 +74,47 @@ PY
   printf '%s\n' "$temp_dir/prepared.md"
 }
 
+preprocess_mermaid() {
+  local input_path="$1"
+  if ! grep -q '```mermaid' "$input_path" 2>/dev/null; then
+    printf '%s\n' "$input_path"
+    return
+  fi
+  if [[ ! -f "$MERMAID_SCRIPT" ]]; then
+    printf '%s\n' "$input_path"
+    return
+  fi
+  local temp_dir
+  temp_dir="$(mktemp -d "${TMPDIR:-/tmp}/mermaid-render.XXXXXX")"
+  TMP_DIRS+=("$temp_dir")
+  local output_md="$temp_dir/mermaid-rendered.md"
+  if python3 "$MERMAID_SCRIPT" "$input_path" "$output_md" "$temp_dir/assets" "png" >/dev/null 2>&1 \
+      && [[ -f "$output_md" ]]; then
+    printf '%s\n' "$output_md"
+  else
+    printf '%s\n' "$input_path"
+  fi
+}
+
+detect_input_format() {
+  local input_path="$1"
+
+  python3 - "$input_path" <<'PY'
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+text = path.read_text(encoding="utf-8", errors="ignore")
+
+if text.startswith("---\n") or text.startswith("---\r\n"):
+    print("markdown")
+else:
+    # Keep Pandoc's broader markdown support, but disable YAML metadata parsing
+    # for regular notes so thematic breaks like `---` are not misread as front matter.
+    print("markdown-yaml_metadata_block")
+PY
+}
+
 if [[ ! -x "$PANDOC_BIN" ]]; then
   PANDOC_BIN="$(command -v pandoc 2>/dev/null || true)"
 fi
@@ -106,12 +156,44 @@ for input_path in "$@"; do
   output_path="${input_path:r}.docx"
   input_dir="${input_path:h}"
   prepared_path="$(preprocess_markdown "$input_path")"
+  prepared_path="$(preprocess_mermaid "$prepared_path")"
+  input_format="$(detect_input_format "$prepared_path")"
+  error_log="$(mktemp "${TMPDIR:-/tmp}/md-to-word-error.XXXXXX")"
+  TMP_DIRS+=("$error_log")
 
-  if "$PANDOC_BIN" "$prepared_path" -o "$output_path" --reference-doc="$TEMPLATE_PATH" --resource-path="$input_dir" >/dev/null 2>&1; then
+  if "$PANDOC_BIN" "$prepared_path" -f "$input_format" -o "$output_path" --reference-doc="$TEMPLATE_PATH" --resource-path="$input_dir" > /dev/null 2>"$error_log"; then
+    python3 - "$output_path" <<'PY' 2>/dev/null || true
+import sys
+from docx import Document
+from docx.oxml.ns import qn
+from docx.oxml import OxmlElement
+
+doc = Document(sys.argv[1])
+for table in doc.tables:
+    tblPr = table._tbl.find(qn('w:tblPr'))
+    if tblPr is None:
+        tblPr = OxmlElement('w:tblPr')
+        table._tbl.insert(0, tblPr)
+    jc = tblPr.find(qn('w:jc'))
+    if jc is None:
+        jc = OxmlElement('w:jc')
+        tblPr.append(jc)
+    jc.set(qn('w:val'), 'center')
+for para in doc.paragraphs:
+    if para.style.name == 'Image Caption':
+        from docx.enum.text import WD_ALIGN_PARAGRAPH
+        para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+doc.save(sys.argv[1])
+PY
     success_count+=1
   else
     failure_count+=1
-    failures+=("无法写入输出文件：$output_path")
+    error_summary="$(sed -n '1,8p' "$error_log")"
+    if [[ -n "$error_summary" ]]; then
+      failures+=("生成失败：$output_path\n$error_summary")
+    else
+      failures+=("生成失败：$output_path")
+    fi
   fi
 done
 
@@ -124,7 +206,9 @@ if (( failure_count > 0 )); then
   if (( ${#failures[@]} > 1 )); then
     details="${details}\n另外还有 $(( ${#failures[@]} - 1 )) 个失败文件。"
   fi
-  show_alert "${summary}\n\n${details}"
+  clipboard_text="Markdown 转 Word 失败\n${summary}\n\n${details}"
+  copy_to_clipboard "$clipboard_text"
+  show_alert "${summary}\n\n${details}\n\n错误详情已复制到剪贴板。"
   exit 1
 fi
 
