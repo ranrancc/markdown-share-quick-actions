@@ -15,20 +15,29 @@
 1. 识别用户系统：macOS、Windows 或其他。
 2. 确认 Python 3 可用。
 3. 确认 `pandoc` 可用；如果没有，提示用户先安装。
+4. 如果 Markdown 中包含 ```mermaid 图表，确认 Node.js 和 Mermaid CLI 可用。
 
 macOS 常用安装：
 
 ```bash
 brew install pandoc
+npm install -g @mermaid-js/mermaid-cli  # 仅 Mermaid 图表需要
 ```
 
-Windows 请从 Pandoc 官网安装：
+Windows 请从 Pandoc 和 Node.js 官网安装：
 
 ```text
 https://pandoc.org/installing.html
+https://nodejs.org/
 ```
 
-4. 按系统执行安装。
+如果要导出 Mermaid 图表，安装 Node.js 后再运行：
+
+```bat
+npm install -g @mermaid-js/mermaid-cli
+```
+
+5. 按系统执行安装。
 
 macOS：
 
@@ -43,7 +52,12 @@ Windows：
 py -3 install_windows.py
 ```
 
-5. 告诉用户如何使用：
+6. 先自检，再告诉用户如何使用：
+
+```bash
+python3 md_share.py html note.md --check
+```
+
    - macOS：Finder 中选中 `.md` 或 `.markdown` 文件，右键打开“快速操作”。
    - Windows：文件资源管理器中选中文件，右键 `Send to`，选择 Markdown 动作。
    - 其他系统：使用 `python3 md_share.py word|html|both <files...>`。
@@ -62,6 +76,8 @@ killall Finder
 ```text
 ~/Library/Services/Markdown 转 Word.workflow
 ~/Library/Services/Markdown 转 HTML.workflow
+~/Library/Services/Markdown 转 Word（含图表）.workflow
+~/Library/Services/Markdown 转 HTML（含图表）.workflow
 ```
 
 ## macOS 一键卸载
@@ -110,12 +126,14 @@ python3 md_share.py word note.md
 python3 md_share.py html note.md
 python3 md_share.py both note.md
 python3 md_share.py both ./notes --recursive
+python3 md_share.py html note.md --check
 ```
 
 Windows 上如果 `python3` 不可用，通常使用：
 
 ```bat
 py -3 md_share.py both note.md
+py -3 md_share.py html note.md --check
 ```
 
 ## 单独安装
@@ -161,7 +179,13 @@ killall Finder
 - Windows / Linux 可使用通用 CLI
 - `python3` 或 Windows `py -3`
 - `pandoc`
-- 可选：Node.js / npm。只有当 Markdown 里包含 ```mermaid 图表并希望导出为图片时需要；不安装也能转换，Mermaid 会保留为代码块。
+- 可选但推荐：Node.js / npm / Mermaid CLI。只有当 Markdown 里包含 ```mermaid 图表并希望导出为图片时需要。
+
+安装 Mermaid CLI：
+
+```bash
+npm install -g @mermaid-js/mermaid-cli
+```
 
 检查依赖：
 
@@ -169,6 +193,8 @@ killall Finder
 python3 --version
 pandoc --version
 npm --version  # 可选：仅 Mermaid 图表预渲染需要
+mmdc --version # 可选：仅 Mermaid 图表预渲染需要
+python3 md_share.py html note.md --check
 ```
 
 如果 `pandoc` 不存在，常见安装方式：
@@ -192,6 +218,8 @@ https://pandoc.org/installing.html
 3. 选择“快速操作”里的：
    - `Markdown 转 Word`
    - `Markdown 转 HTML`
+   - `Markdown 转 Word（含图表）`
+   - `Markdown 转 HTML（含图表）`
 4. 输出文件会出现在原 Markdown 文件旁边。
 
 例如：
@@ -213,6 +241,12 @@ course-note.html
    - `Markdown to Word and HTML`
 
 或者直接拖拽到 `windows/*.bat`。
+
+如果含 Mermaid 图表，先在命令提示符或 PowerShell 里运行：
+
+```bat
+py -3 md_share.py html note.md --check
+```
 
 ## 给教师的典型场景
 
@@ -245,6 +279,22 @@ killall Finder
 ```bash
 brew install pandoc
 ```
+
+### Mermaid 图表没有变成图片
+
+先运行自检：
+
+```bash
+python3 md_share.py html note.md --check
+```
+
+如果提示缺 Node.js 或 Mermaid CLI：
+
+```bash
+npm install -g @mermaid-js/mermaid-cli
+```
+
+macOS 的 Finder 快速操作会自动补 Homebrew 的 PATH。Windows 会自动查找常见的 Node.js、Chrome 和 Edge 安装路径。
 
 ### Word 图片没有显示
 

@@ -15,6 +15,7 @@ SHORTCUTS = {
     "Markdown to Word.bat": "md-to-word.bat",
     "Markdown to HTML.bat": "md-to-html.bat",
     "Markdown to Word and HTML.bat": "md-to-both.bat",
+    "Markdown Share Check.bat": "md-share-check.bat",
 }
 
 

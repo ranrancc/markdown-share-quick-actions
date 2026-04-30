@@ -43,8 +43,8 @@ def main() -> int:
 
     print()
     print("Installed Finder Quick Actions:")
-    print("- Markdown 转 Word")
-    print("- Markdown 转 HTML")
+    print("- Markdown 转 Word（含图表）")
+    print("- Markdown 转 HTML（含图表）")
     print()
     print("Run `killall Finder` if the menu does not appear immediately.")
     return 0

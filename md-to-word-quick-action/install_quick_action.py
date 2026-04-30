@@ -8,8 +8,8 @@ import subprocess
 import sys
 from pathlib import Path
 
-WORKFLOW_NAME = "Markdown 转 Word.workflow"
-MENU_TITLE = "Markdown 转 Word"
+WORKFLOW_NAME = "Markdown 转 Word（含图表）.workflow"
+MENU_TITLE = "Markdown 转 Word（含图表）"
 ICON_BASENAME = "md-to-word-icon"
 
 
@@ -119,12 +119,15 @@ def main() -> int:
     resources_dir = contents_dir / "Resources"
 
     converter_path = tool_dir / "convert_md_to_docx.sh"
+    cli_path = tool_dir.parent / "md_share.py"
     template_path = tool_dir / "reference.docx"
     icon_script_path = tool_dir / "generate_workflow_icon.py"
     icon_path = tool_dir / f"{ICON_BASENAME}.icns"
 
     if not converter_path.exists():
         raise SystemExit(f"Missing converter script: {converter_path}")
+    if not cli_path.exists():
+        raise SystemExit(f"Missing shared CLI: {cli_path}")
     if not template_path.exists():
         raise SystemExit(f"Missing reference template: {template_path}")
     if not icon_script_path.exists():
@@ -141,7 +144,7 @@ def main() -> int:
     contents_dir.mkdir(parents=True, exist_ok=True)
     resources_dir.mkdir(parents=True, exist_ok=True)
 
-    command = f'exec "{converter_path}" "$@"'
+    command = f'exec "{sys.executable}" "{cli_path}" word "$@"'
 
     with (contents_dir / "info.plist").open("wb") as f:
         plistlib.dump(build_info_plist(), f, fmt=plistlib.FMT_XML)

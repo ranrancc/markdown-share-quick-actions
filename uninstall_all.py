@@ -9,6 +9,8 @@ from pathlib import Path
 WORKFLOWS = [
     "Markdown 转 Word.workflow",
     "Markdown 转 HTML.workflow",
+    "Markdown 转 Word（含图表）.workflow",
+    "Markdown 转 HTML（含图表）.workflow",
 ]
 
 
