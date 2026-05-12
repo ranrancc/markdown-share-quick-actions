@@ -1,68 +1,40 @@
 # Markdown Share Quick Actions
 
-跨平台 Markdown 分享工具包。它提供一个通用命令行转换器，并为 macOS 和 Windows 提供系统集成：
+把 Markdown 一键转成 Word、单文件 HTML，也可以把常见文档或 HTML 转回 Markdown。
 
-- macOS：Finder 右键快速操作
-- Windows：SendTo 菜单和拖拽 `.bat`
-- 其他系统：通用 CLI
+适合教师、研究者、Obsidian 用户和长期用 Markdown 写作的人：平时用 Markdown 写讲义、笔记、会议纪要，分享时用右键菜单导出成 `.docx` 或可直接打开的 `.html`。
 
-这个包适合高校教师、研究者和 Obsidian/Markdown 用户：平时用 Markdown 写课程讲义、会议纪要、论文笔记，分享时一键变成 Word 或可投屏的单文件 HTML。
+## 主要功能
 
-## 给 OpenClaw / Codex / 任意智能体的快速部署指令
+- macOS：Finder 右键快速操作。
+- Windows：文件资源管理器 `Send to` 菜单和拖拽 `.bat`。
+- 其他系统：通用命令行。
+- Markdown 转 Word，支持图片、基础 Obsidian 图片语法和 Mermaid 图表预渲染。
+- Markdown 转 HTML，生成单文件自包含网页，适合投屏、分享、打印。
+- 5 种 HTML 主题：经典样式、文章样式、报告样式、阅读样式、交互样式。
+- 完整模式可用：多种文档转 Markdown、HTML 转 Markdown、URL 转 Markdown。
 
-如果用户给你这个仓库 URL，并要求安装或部署，请按这个顺序执行：
+## HTML 主题
 
-1. 识别用户系统：macOS、Windows 或其他。
-2. 确认 Python 3 可用。
-3. 确认 `pandoc` 可用；如果没有，提示用户先安装。
-4. 如果 Markdown 中包含 ```mermaid 图表，确认 Node.js 和 Mermaid CLI 可用。
+| 中文名 | 命令参数 | 适合场景 |
+| --- | --- | --- |
+| 经典样式 | `classic` | 默认稳定样式，适合通用分享 |
+| 文章样式 | `article` | 长文、公众号风格文章 |
+| 报告样式 | `report` | 课程材料、研究报告、正式文档 |
+| 阅读样式 | `reading` | 极简阅读、打印前预览 |
+| 交互样式 | `interactive` | 长讲义、带目录投屏展示 |
 
-macOS 常用安装：
+## 安装
+
+### macOS
+
+先安装 Pandoc：
 
 ```bash
 brew install pandoc
-npm install -g @mermaid-js/mermaid-cli  # 仅 Mermaid 图表需要
 ```
 
-Windows 请从 Pandoc 和 Node.js 官网安装：
-
-```text
-https://pandoc.org/installing.html
-https://nodejs.org/
-```
-
-如果要导出 Mermaid 图表，安装 Node.js 后再运行：
-
-```bat
-npm install -g @mermaid-js/mermaid-cli
-```
-
-5. 按系统执行安装。
-
-macOS：
-
-```bash
-python3 install_all.py
-killall Finder
-```
-
-Windows：
-
-```bat
-py -3 install_windows.py
-```
-
-6. 先自检，再告诉用户如何使用：
-
-```bash
-python3 md_share.py html note.md --check
-```
-
-   - macOS：Finder 中选中 `.md` 或 `.markdown` 文件，右键打开“快速操作”。
-   - Windows：文件资源管理器中选中文件，右键 `Send to`，选择 Markdown 动作。
-   - 其他系统：使用 `python3 md_share.py word|html|both <files...>`。
-
-## macOS 一键安装
+下载并安装右键菜单：
 
 ```bash
 git clone https://github.com/ranrancc/markdown-share-quick-actions.git
@@ -71,195 +43,143 @@ python3 install_all.py
 killall Finder
 ```
 
-安装完成后会生成：
+安装器会把运行文件复制到稳定目录：
 
 ```text
-~/Library/Services/Markdown 转 Word.workflow
-~/Library/Services/Markdown 转 HTML.workflow
-~/Library/Services/Markdown 转 Word（含图表）.workflow
-~/Library/Services/Markdown 转 HTML（含图表）.workflow
+~/Library/Application Support/Markdown Share Quick Actions/
 ```
 
-## macOS 一键卸载
+Finder 右键菜单会指向这个目录。安装完成后，下载/克隆的仓库目录可以移动或删除。
+
+安装后，在 Finder 里选中 `.md` / `.markdown` 文件，右键打开“快速操作”，可以看到：
+
+```text
+Markdown 转 Word（含图表）
+Markdown 转 HTML（含图表）
+MD 转 HTML（选择主题）
+多种文档转 MD
+HTML 转 MD
+```
+
+### Windows
+
+先安装：
+
+- Python 3: https://www.python.org/downloads/windows/
+- Pandoc: https://pandoc.org/installing.html
+
+然后运行：
+
+```bat
+git clone https://github.com/ranrancc/markdown-share-quick-actions.git
+cd markdown-share-quick-actions
+py -3 install_windows.py
+```
+
+安装器会把运行文件复制到稳定目录：
+
+```text
+%LOCALAPPDATA%\MarkdownShareQuickActions\
+```
+
+SendTo 菜单会指向这个目录。安装完成后，下载/克隆的仓库目录可以移动或删除。
+
+安装后，在文件资源管理器里选中文件，右键选择 `Send to`，可以看到：
+
+```text
+Markdown to Word
+Markdown to HTML
+Markdown to HTML - Choose Theme
+Markdown to Word and HTML
+Document to Markdown
+HTML to Markdown
+Markdown Share Check
+```
+
+### Mermaid 图表支持
+
+如果 Markdown 里有 Mermaid 图表，还需要 Node.js 和 Mermaid CLI：
+
+```bash
+npm install -g @mermaid-js/mermaid-cli
+```
+
+安装后可以自检：
+
+```bash
+python3 md_share.py html note.md --check
+```
+
+Windows 可用：
+
+```bat
+py -3 md_share.py html note.md --check
+```
+
+## 完整模式
+
+基础模式只需要 Python 3 和 Pandoc，足够完成 Markdown 转 Word/HTML。
+
+如果要使用“多种文档转 MD / HTML 转 MD / URL 转 MD”，建议把完整依赖安装到稳定运行目录的虚拟环境里，避免污染系统 Python：
+
+```bash
+python3 install_full_deps.py
+python3 install_all.py
+killall Finder
+```
+
+Windows:
+
+```bat
+py -3 install_full_deps.py
+py -3 install_windows.py
+```
+
+说明：右键菜单会优先使用稳定运行目录里的 `.venv`；没有虚拟环境时才退回系统可用的 Python。
+
+## 命令行用法
+
+```bash
+python3 md_share.py word note.md
+python3 md_share.py html note.md
+python3 md_share.py html note.md --theme article
+python3 md_share.py both note.md
+python3 md_share.py both ./notes --recursive
+python3 md_share.py to-md file.docx
+python3 md_share.py html-to-md page.html
+python3 md_share.py url-to-md "https://example.com/article"
+```
+
+Windows 上如果 `python3` 不可用，通常使用：
+
+```bat
+py -3 md_share.py html note.md --theme report
+```
+
+## 卸载
+
+macOS:
 
 ```bash
 python3 uninstall_all.py
 killall Finder
 ```
 
-## Windows 安装
+这会同时移除 Finder workflow 和 `~/Library/Application Support/Markdown Share Quick Actions/` 里的运行文件。
 
-```bat
-git clone https://github.com/ranrancc/markdown-share-quick-actions.git
-cd markdown-share-quick-actions
-py -3 install_windows.py
-```
-
-安装后，在文件资源管理器中选中 `.md` / `.markdown` 文件，右键：
-
-```text
-Send to -> Markdown to Word
-Send to -> Markdown to HTML
-Send to -> Markdown to Word and HTML
-```
-
-也可以直接把 Markdown 文件拖到：
-
-```text
-windows\md-to-word.bat
-windows\md-to-html.bat
-windows\md-to-both.bat
-```
-
-## Windows 卸载
+Windows:
 
 ```bat
 py -3 uninstall_windows.py
 ```
 
-## 通用命令行
-
-适用于 macOS、Windows、Linux：
-
-```bash
-python3 md_share.py word note.md
-python3 md_share.py html note.md
-python3 md_share.py both note.md
-python3 md_share.py both ./notes --recursive
-python3 md_share.py html note.md --check
-```
-
-Windows 上如果 `python3` 不可用，通常使用：
-
-```bat
-py -3 md_share.py both note.md
-py -3 md_share.py html note.md --check
-```
-
-## 单独安装
-
-只安装 Word 导出：
-
-```bash
-cd md-to-word-quick-action
-python3 generate_reference_docx.py
-python3 install_quick_action.py
-killall Finder
-```
-
-只安装 HTML 导出：
-
-```bash
-cd md-to-html-quick-action
-python3 install_quick_action.py
-killall Finder
-```
-
-## 功能说明
-
-### Markdown 转 Word
-
-- 支持单个文件和多选批量转换。
-- 输出为原目录下同名 `.docx`。
-- 使用 `reference.docx` 控制 Word 排版样式。
-- 支持普通 Markdown 图片。
-- 支持外链图片。
-- 支持基础 Obsidian 图片写法：`![[image.png]]`。
-
-### Markdown 转 HTML
-
-- 输出为原目录下同名 `.html`。
-- 默认生成单文件自包含 HTML，图片会内嵌。
-- 适合投屏、网页分享、发给学生或同事。
-- HTML 自带展示优化样式、全屏按钮、缩放档位、打印样式、图片点击放大。
-
-## 依赖
-
-- macOS
-- Windows / Linux 可使用通用 CLI
-- `python3` 或 Windows `py -3`
-- `pandoc`
-- 可选但推荐：Node.js / npm / Mermaid CLI。只有当 Markdown 里包含 ```mermaid 图表并希望导出为图片时需要。
-
-安装 Mermaid CLI：
-
-```bash
-npm install -g @mermaid-js/mermaid-cli
-```
-
-检查依赖：
-
-```bash
-python3 --version
-pandoc --version
-npm --version  # 可选：仅 Mermaid 图表预渲染需要
-mmdc --version # 可选：仅 Mermaid 图表预渲染需要
-python3 md_share.py html note.md --check
-```
-
-如果 `pandoc` 不存在，常见安装方式：
-
-```bash
-brew install pandoc
-```
-
-Windows 用户从 Pandoc 官网下载安装包：
-
-```text
-https://pandoc.org/installing.html
-```
-
-## 使用方法
-
-### macOS
-
-1. 在 Finder 里选中一个或多个 `.md` / `.markdown` 文件。
-2. 右键。
-3. 选择“快速操作”里的：
-   - `Markdown 转 Word`
-   - `Markdown 转 HTML`
-   - `Markdown 转 Word（含图表）`
-   - `Markdown 转 HTML（含图表）`
-4. 输出文件会出现在原 Markdown 文件旁边。
-
-例如：
-
-```text
-course-note.md
-course-note.docx
-course-note.html
-```
-
-### Windows
-
-1. 在文件资源管理器中选中一个或多个 `.md` / `.markdown` 文件。
-2. 右键。
-3. 选择 `Send to`。
-4. 选择：
-   - `Markdown to Word`
-   - `Markdown to HTML`
-   - `Markdown to Word and HTML`
-
-或者直接拖拽到 `windows/*.bat`。
-
-如果含 Mermaid 图表，先在命令提示符或 PowerShell 里运行：
-
-```bat
-py -3 md_share.py html note.md --check
-```
-
-## 给教师的典型场景
-
-- 把 Obsidian 课程讲义导出成 Word，发给学院、学生或行政同事。
-- 把 Markdown 课堂笔记导出成 HTML，直接浏览器打开投屏。
-- 把论文阅读笔记导出成可打印的网页。
-- 把会议纪要批量转成 Word 归档。
+这会同时移除 SendTo 菜单和 `%LOCALAPPDATA%\MarkdownShareQuickActions\` 里的运行文件。
 
 ## 故障排查
 
 ### 右键菜单里看不到动作
 
-先刷新 Finder：
+macOS 先刷新 Finder：
 
 ```bash
 killall Finder
@@ -274,11 +194,13 @@ killall Finder
 
 ### 提示找不到 pandoc
 
-安装 pandoc：
+macOS:
 
 ```bash
 brew install pandoc
 ```
+
+Windows: 从 https://pandoc.org/installing.html 下载安装包。
 
 ### Mermaid 图表没有变成图片
 
@@ -294,8 +216,6 @@ python3 md_share.py html note.md --check
 npm install -g @mermaid-js/mermaid-cli
 ```
 
-macOS 的 Finder 快速操作会自动补 Homebrew 的 PATH。Windows 会自动查找常见的 Node.js、Chrome 和 Edge 安装路径。
-
 ### Word 图片没有显示
 
 优先使用这些写法：
@@ -310,7 +230,7 @@ macOS 的 Finder 快速操作会自动补 Homebrew 的 PATH。Windows 会自动�
 
 ### 想改 Word 样式
 
-替换这个文件即可：
+替换这个文件：
 
 ```text
 md-to-word-quick-action/reference.docx
@@ -318,39 +238,159 @@ md-to-word-quick-action/reference.docx
 
 标题、字体、页边距、段落样式都由它控制。
 
-## 目录结构
-
-```text
-markdown-share-quick-actions/
-├── install_all.py
-├── install_windows.py
-├── uninstall_all.py
-├── uninstall_windows.py
-├── md_share.py
-├── mermaid-prerender.py
-├── README.md
-├── AGENTS.md
-├── SKILL.md
-├── md-to-word-quick-action/
-│   ├── convert_md_to_docx.sh
-│   ├── install_quick_action.py
-│   ├── generate_reference_docx.py
-│   ├── reference.docx
-│   └── README.md
-└── md-to-html-quick-action/
-    ├── convert_md_to_html.sh
-    ├── build_pretty_html.py
-    ├── install_quick_action.py
-    └── README.md
-└── windows/
-    ├── md-to-word.bat
-    ├── md-to-html.bat
-    ├── md-to-both.bat
-    └── README.md
-```
-
 ## 安全说明
 
 - 所有转换都在本机执行。
 - 工具不会上传你的 Markdown、图片或导出文件。
 - HTML 导出使用 `pandoc --embed-resources`，会把本地图片内嵌到 HTML 文件中，分享前请确认文件中不含敏感图片。
+- URL 转 Markdown 会访问用户提供的网址；公开发布时请把它视为完整模式能力，而不是默认必需能力。
+
+---
+
+# Agent Installation Guide
+
+This section is written for Codex, OpenClaw, Claude Code, and other AI agents that install or debug this repository for a user.
+
+## Goal
+
+Install local Markdown conversion tools without uploading user files or modifying source Markdown files in place.
+
+## System Routing
+
+1. Detect the user's OS.
+2. Use macOS Finder Quick Actions on macOS.
+3. Use Windows SendTo wrappers on Windows.
+4. Use the CLI on Linux or unsupported systems.
+
+## Dependency Levels
+
+### Basic
+
+Required for Markdown to Word/HTML:
+
+- Python 3
+- Pandoc
+
+Optional, only when Markdown contains Mermaid code blocks:
+
+- Node.js
+- Mermaid CLI: `npm install -g @mermaid-js/mermaid-cli`
+
+### Full
+
+Required for document/HTML/URL to Markdown:
+
+```bash
+python3 install_full_deps.py
+```
+
+Windows:
+
+```bat
+py -3 install_full_deps.py
+```
+
+Prefer the runtime virtual environment for full mode. Do not install heavy conversion dependencies into the user's global Python unless the user explicitly asks.
+
+## macOS Install
+
+From the repository root:
+
+```bash
+python3 install_all.py
+killall Finder
+```
+
+Runtime files are copied to:
+
+```text
+~/Library/Application Support/Markdown Share Quick Actions/
+```
+
+Expected workflows:
+
+```text
+~/Library/Services/Markdown 转 Word（含图表）.workflow
+~/Library/Services/Markdown 转 HTML（含图表）.workflow
+~/Library/Services/MD 转 HTML（选择主题）.workflow
+~/Library/Services/多种文档转 MD.workflow
+~/Library/Services/HTML 转 MD.workflow
+```
+
+The theme chooser presents Chinese labels and maps them to CLI slugs:
+
+```text
+经典样式 -> classic
+文章样式 -> article
+报告样式 -> report
+阅读样式 -> reading
+交互样式 -> interactive
+```
+
+## Windows Install
+
+From the repository root:
+
+```bat
+py -3 install_windows.py
+```
+
+Runtime files are copied to:
+
+```text
+%LOCALAPPDATA%\MarkdownShareQuickActions\
+```
+
+The installer writes SendTo wrappers with the runtime root embedded as an absolute path. Do not replace this with a blind copy of `windows/*.bat`, because copied batch files would resolve `%~dp0` to the SendTo folder instead of the runtime directory.
+
+Expected SendTo entries:
+
+```text
+Markdown to Word.bat
+Markdown to HTML.bat
+Markdown to HTML - Choose Theme.bat
+Markdown to Word and HTML.bat
+Document to Markdown.bat
+HTML to Markdown.bat
+Markdown Share Check.bat
+```
+
+## Verification
+
+Run these checks before declaring installation complete:
+
+```bash
+python3 md_share.py html README.md --check
+python3 md_share.py html --theme article /path/to/simple.md
+```
+
+For a Mermaid sample, verify that conversion produces no `Mermaid render incomplete` error.
+
+macOS plist check:
+
+```bash
+plutil -lint ~/Library/Services/*.workflow/Contents/document.wflow
+```
+
+Windows sanity check:
+
+```bat
+py -3 md_share.py html --theme classic path\to\simple.md
+```
+
+## Robustness Notes
+
+- Do not use `status="$?"` in Automator zsh scripts. `status` is a read-only zsh special parameter; use `exit_code` or `rc`.
+- Keep `classic` as the compatibility theme. It writes `note.html`; other themes write `note.<theme>.html`.
+- `to-md`, `html-to-md`, and `url-to-md` are full-mode features because they require extra Python packages.
+- `install_all.py` should install the complete macOS Quick Actions set.
+- `uninstall_all.py` should remove every workflow that `install_all.py` creates.
+- `install_windows.py` should generate SendTo wrappers with an absolute runtime path.
+- Installed workflows and SendTo entries should point to the stable runtime directory, not the downloaded repository folder.
+
+## Do Not
+
+- Do not upload user Markdown files or images.
+- Do not modify source Markdown files in place.
+- Do not overwrite `md-to-word-quick-action/reference.docx` unless the user asks to change Word styling.
+- Do not commit private Obsidian research notes, local `.workflow` bundles, `.venv`, `__pycache__`, or generated output files.

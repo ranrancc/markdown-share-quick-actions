@@ -7,12 +7,11 @@ import subprocess
 import sys
 from pathlib import Path
 
+from install_runtime import sync_runtime
+
 
 ROOT = Path(__file__).resolve().parent
-TOOLS = [
-    ROOT / "md-to-word-quick-action",
-    ROOT / "md-to-html-quick-action",
-]
+TOOLS = ["md-to-word-quick-action", "md-to-html-quick-action"]
 
 
 def run(cmd: list[str], cwd: Path) -> None:
@@ -29,22 +28,31 @@ def main() -> int:
         print("pandoc was not found. Install it first, for example: brew install pandoc", file=sys.stderr)
         return 2
 
-    for tool_dir in TOOLS:
+    runtime = sync_runtime(ROOT)
+    print(f"Installed runtime files to: {runtime}", flush=True)
+
+    for tool_name in TOOLS:
+        tool_dir = runtime / tool_name
         if not tool_dir.exists():
             print(f"Missing tool directory: {tool_dir}", file=sys.stderr)
             return 1
 
-    word_dir = ROOT / "md-to-word-quick-action"
+    word_dir = runtime / "md-to-word-quick-action"
     run([sys.executable, "generate_reference_docx.py"], word_dir)
     run([sys.executable, "install_quick_action.py"], word_dir)
 
-    html_dir = ROOT / "md-to-html-quick-action"
+    html_dir = runtime / "md-to-html-quick-action"
     run([sys.executable, "install_quick_action.py"], html_dir)
+
+    run([sys.executable, str(ROOT / "install_new_actions.py"), str(runtime)], ROOT)
 
     print()
     print("Installed Finder Quick Actions:")
     print("- Markdown 转 Word（含图表）")
     print("- Markdown 转 HTML（含图表）")
+    print("- MD 转 HTML（选择主题）")
+    print("- 多种文档转 MD")
+    print("- HTML 转 MD")
     print()
     print("Run `killall Finder` if the menu does not appear immediately.")
     return 0

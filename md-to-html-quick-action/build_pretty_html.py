@@ -606,6 +606,139 @@ STYLE = """
 """
 
 
+THEME_STYLES = {
+    "classic": "",
+    "article": """
+<style>
+  :root {
+    --bg: #f7f3ec;
+    --paper: #fffdf8;
+    --ink: #1f2528;
+    --muted: #6f6a61;
+    --line: #ded6c9;
+    --accent: #a94f2b;
+    --accent-dark: #7f351e;
+    --accent-bg: #f6ede4;
+    --header-from: #2b2926;
+    --header-to: #6f3b27;
+    --shadow: 0 20px 70px rgba(72, 52, 32, 0.13);
+    --deck-max-width: 920px;
+    --text-column-width: min(39em, 100%);
+    --wide-column-width: min(48em, 100%);
+  }
+  body { font-family: "Palatino", "Times New Roman", "Songti SC", "STSong", serif; }
+  .toolbar button { background: var(--accent); box-shadow: 0 8px 22px rgba(127, 53, 30, 0.22); }
+  .deck-header { background: #2b2926; }
+  .deck-title { font-weight: 700; letter-spacing: 0; }
+  h1, h2, h3, h4 { font-family: "Avenir Next", "PingFang SC", sans-serif; letter-spacing: 0; }
+  h2 { border-left-color: var(--accent); background: transparent; border-radius: 0; padding-left: 0.7em; }
+  h3 { color: var(--accent-dark); }
+  blockquote { color: #4d382d; background: #f6ede4; border-left-color: var(--accent); }
+  code { color: #8f2f23; background: #f1ebe3; }
+  pre { background: #2b2926; color: #f4efe7; }
+</style>
+""",
+    "report": """
+<style>
+  :root {
+    --bg: #eef0ed;
+    --paper: #ffffff;
+    --ink: #18211f;
+    --muted: #66716e;
+    --line: #d5ddd9;
+    --accent: #2f6f5e;
+    --accent-dark: #204b40;
+    --accent-bg: #edf5f2;
+    --header-from: #18332e;
+    --header-to: #2f6f5e;
+    --shadow: 0 22px 78px rgba(24, 51, 46, 0.12);
+    --deck-max-width: 1180px;
+    --text-column-width: min(46em, 100%);
+    --wide-column-width: min(62em, 100%);
+  }
+  body { font-family: -apple-system, "PingFang SC", "Segoe UI", Arial, sans-serif; }
+  .deck { border-radius: 12px; }
+  .deck-header { background: var(--header-from); }
+  .deck-title { text-align: left; max-width: 100%; }
+  h2 { background: #edf5f2; border-left-color: var(--accent); border-radius: 0; }
+  h3 { color: var(--accent-dark); }
+  table { width: 100%; font-size: 0.92rem; }
+  thead tr { background: var(--header-from); }
+  tbody tr:nth-child(even) td { background: #f4f7f5; }
+  tbody tr:hover td { background: #e2eee9; }
+  pre { background: #18211f; }
+</style>
+""",
+    "reading": """
+<style>
+  :root {
+    --bg: #ffffff;
+    --paper: #ffffff;
+    --ink: #242424;
+    --muted: #6b6b6b;
+    --line: #e6e6e6;
+    --accent: #47685b;
+    --accent-dark: #2f4b40;
+    --accent-bg: #f4f7f5;
+    --header-from: #ffffff;
+    --header-to: #ffffff;
+    --shadow: none;
+    --deck-max-width: 760px;
+    --text-column-width: min(38em, 100%);
+    --wide-column-width: min(42em, 100%);
+  }
+  .page-shell { padding-top: 18px; }
+  .deck { border: 0; border-radius: 0; }
+  .deck-header { background: #ffffff; padding-bottom: 18px; border-bottom: 1px solid var(--line); }
+  .deck-header::after { display: none; }
+  .deck-title { color: var(--ink); text-shadow: none; text-align: left; }
+  .deck-body { padding-top: 30px; }
+  body { font-family: "Georgia", "Songti SC", "STSong", serif; }
+  h1, h2, h3, h4 { font-family: -apple-system, "PingFang SC", sans-serif; letter-spacing: 0; }
+  h2 { background: transparent; border-left: 0; border-bottom: 1px solid var(--line); border-radius: 0; padding-left: 0; }
+  h3 { color: var(--ink); }
+  blockquote { background: transparent; color: var(--muted); border-left-color: var(--line); }
+  img { box-shadow: none; border-radius: 6px; }
+  pre { background: #f6f8fa; color: #24292f; box-shadow: none; border: 1px solid var(--line); }
+</style>
+""",
+    "interactive": """
+<style>
+  :root {
+    --bg: #f4f2ed;
+    --paper: #fffefa;
+    --ink: #202523;
+    --muted: #69706c;
+    --line: #ddd8cf;
+    --accent: #b4562b;
+    --accent-dark: #78391f;
+    --accent-bg: #f8efe8;
+    --header-from: #23302c;
+    --header-to: #4a5a51;
+    --shadow: 0 24px 80px rgba(42, 48, 44, 0.12);
+    --deck-max-width: 1240px;
+    --text-column-width: min(42em, 100%);
+    --wide-column-width: min(58em, 100%);
+  }
+  .deck-body { display: grid; grid-template-columns: minmax(180px, 250px) minmax(0, 1fr); column-gap: 42px; align-items: start; }
+  .deck-body > nav#TOC { grid-column: 1; position: sticky; top: 92px; max-height: calc(100vh - 120px); overflow: auto; padding: 16px 18px; border: 1px solid var(--line); border-radius: 10px; background: #fbf7f0; font-size: 0.82rem; }
+  .deck-body > nav#TOC + * { margin-top: 0; }
+  .deck-body > :not(nav#TOC) { grid-column: 2; }
+  .deck-body > nav#TOC ul { padding-left: 1em; margin-bottom: 0; }
+  .deck-body > nav#TOC li + li { margin-top: 0.25em; }
+  .deck-body > nav#TOC a { color: var(--accent-dark); text-decoration: none; }
+  h2 { border-left-color: var(--accent); background: var(--accent-bg); }
+  h3 { color: var(--accent-dark); }
+  pre { background: #23302c; }
+  @media (max-width: 980px) {
+    .deck-body { display: block; }
+    .deck-body > nav#TOC { position: static; max-height: none; margin-bottom: 1.5em; }
+  }
+</style>
+""",
+}
+
+
 SCRIPT = """
 <script>
   (() => {
@@ -730,12 +863,15 @@ def extract_between(text: str, start: str, end: str) -> str:
 
 
 def main() -> int:
-    if len(sys.argv) != 4:
-      raise SystemExit("Usage: build_pretty_html.py <pandoc_html> <output_html> <title>")
+    if len(sys.argv) not in {4, 5}:
+      raise SystemExit("Usage: build_pretty_html.py <pandoc_html> <output_html> <title> [theme]")
 
     pandoc_html = Path(sys.argv[1]).read_text(encoding="utf-8")
     output_path = Path(sys.argv[2])
     title = sys.argv[3].strip() or output_path.stem
+    theme = sys.argv[4].strip() if len(sys.argv) == 5 else "classic"
+    if theme not in THEME_STYLES:
+        raise SystemExit(f"Unknown theme: {theme}")
 
     head_inner = extract_between(pandoc_html, r"<head[^>]*>", r"</head>")
     body_inner = extract_between(pandoc_html, r"<body[^>]*>", r"</body>")
@@ -756,8 +892,9 @@ def main() -> int:
   <title>{html.escape(title)}</title>
   {extra_styles}
   {STYLE}
+  {THEME_STYLES[theme]}
 </head>
-  <body>
+  <body class="theme-{html.escape(theme)}">
   <div class="page-shell">
     <div class="stage">
       <div class="toolbar">

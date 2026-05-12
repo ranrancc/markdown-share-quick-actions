@@ -10,6 +10,8 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import urllib.parse
+import urllib.request
 from pathlib import Path
 
 
@@ -18,6 +20,8 @@ WORD_TEMPLATE = ROOT / "md-to-word-quick-action" / "reference.docx"
 HTML_BUILDER = ROOT / "md-to-html-quick-action" / "build_pretty_html.py"
 MERMAID_PRERENDER = ROOT / "mermaid-prerender.py"
 MARKDOWN_SUFFIXES = {".md", ".markdown"}
+HTML_SUFFIXES = {".html", ".htm"}
+HTML_THEMES = {"classic", "article", "report", "reading", "interactive"}
 LOG_PATH = Path(os.environ.get("MD_SHARE_LOG", Path(tempfile.gettempdir()) / "markdown-share-quick-actions.log"))
 
 
@@ -219,6 +223,14 @@ def output_path(src: Path, suffix: str, output_dir: Path | None) -> Path:
     return base_dir / f"{src.stem}.{suffix}"
 
 
+def themed_output_path(src: Path, theme: str, output_dir: Path | None) -> Path:
+    if theme == "classic":
+        return output_path(src, "html", output_dir)
+    base_dir = output_dir if output_dir else src.parent
+    base_dir.mkdir(parents=True, exist_ok=True)
+    return base_dir / f"{src.stem}.{theme}.html"
+
+
 def convert_word(src: Path, output_dir: Path | None, pandoc: str) -> Path:
     if not WORD_TEMPLATE.exists():
         raise RuntimeError(f"Missing Word reference template: {WORD_TEMPLATE}")
@@ -243,11 +255,13 @@ def convert_word(src: Path, output_dir: Path | None, pandoc: str) -> Path:
     return dest
 
 
-def convert_html(src: Path, output_dir: Path | None, pandoc: str) -> Path:
+def convert_html(src: Path, output_dir: Path | None, pandoc: str, theme: str = "classic") -> Path:
     if not HTML_BUILDER.exists():
         raise RuntimeError(f"Missing HTML builder: {HTML_BUILDER}")
-    dest = output_path(src, "html", output_dir)
-    log(f"html start: src={src} dest={dest} root={ROOT}")
+    if theme not in HTML_THEMES:
+        raise RuntimeError(f"Unknown HTML theme: {theme}. Choose one of: {', '.join(sorted(HTML_THEMES))}")
+    dest = themed_output_path(src, theme, output_dir)
+    log(f"html start: src={src} dest={dest} theme={theme} root={ROOT}")
     with tempfile.TemporaryDirectory(prefix="md-share-html.") as tmp:
         tmp_dir = Path(tmp)
         prepared = tmp_dir / "prepared.md"
@@ -265,10 +279,106 @@ def convert_html(src: Path, output_dir: Path | None, pandoc: str) -> Path:
             "--metadata",
             f"title={src.stem}",
         ]
+        if theme == "interactive":
+            cmd.extend(["--toc", "--toc-depth=3"])
         subprocess.run(cmd, check=True)
-        subprocess.run([sys.executable, str(HTML_BUILDER), str(rendered), str(dest), src.stem], check=True)
+        subprocess.run([sys.executable, str(HTML_BUILDER), str(rendered), str(dest), src.stem, theme], check=True)
     log(f"html done: dest={dest} exists={dest.exists()} size={dest.stat().st_size if dest.exists() else 0}")
     return dest
+
+
+def convert_any_to_md(src: Path, output_dir: Path | None) -> Path:
+    try:
+        from markitdown import MarkItDown
+    except ImportError as exc:
+        raise RuntimeError("markitdown is not installed. Install with: python3 -m pip install 'markitdown[all]'") from exc
+    dest = output_path(src, "md", output_dir)
+    log(f"to-md start: src={src} dest={dest}")
+    converter = MarkItDown()
+    result = converter.convert(str(src))
+    content = result.text_content or ""
+    if not content.strip():
+        raise RuntimeError(f"Conversion produced empty Markdown: {src}")
+    dest.write_text(content, encoding="utf-8")
+    log(f"to-md done: dest={dest} exists={dest.exists()} size={dest.stat().st_size if dest.exists() else 0}")
+    return dest
+
+
+def convert_html_to_md(src: Path, output_dir: Path | None) -> Path:
+    dest = output_path(src, "md", output_dir)
+    log(f"html-to-md start: src={src} dest={dest}")
+    html_text = src.read_text(encoding="utf-8", errors="replace")
+    md_text = html_to_markdown(html_text)
+    if not md_text.strip():
+        raise RuntimeError(f"Conversion produced empty Markdown: {src}")
+    dest.write_text(md_text, encoding="utf-8")
+    log(f"html-to-md done: dest={dest} exists={dest.exists()} size={dest.stat().st_size if dest.exists() else 0}")
+    return dest
+
+
+def convert_url_to_md(url: str, output_dir: Path | None, mode: str) -> Path:
+    name = url_to_stem(url)
+    base_dir = output_dir if output_dir else Path.cwd()
+    base_dir.mkdir(parents=True, exist_ok=True)
+    dest = base_dir / f"{name}.md"
+    log(f"url-to-md start: url={url} dest={dest} mode={mode}")
+    html_text = fetch_url(url)
+    if mode in {"article", "auto"}:
+        html_text = extract_article_html(html_text, url) or html_text
+    md_text = html_to_markdown(html_text)
+    if not md_text.strip():
+        raise RuntimeError(f"Conversion produced empty Markdown: {url}")
+    dest.write_text(md_text, encoding="utf-8")
+    log(f"url-to-md done: dest={dest} exists={dest.exists()} size={dest.stat().st_size if dest.exists() else 0}")
+    return dest
+
+
+def fetch_url(url: str) -> str:
+    req = urllib.request.Request(url, headers={"User-Agent": "MarkdownShareQuickActions/1.0"})
+    with urllib.request.urlopen(req, timeout=30) as resp:
+        raw = resp.read()
+        charset = resp.headers.get_content_charset() or "utf-8"
+        return raw.decode(charset, errors="replace")
+
+
+def extract_article_html(html_text: str, url: str) -> str | None:
+    try:
+        import trafilatura
+    except ImportError:
+        return None
+    return trafilatura.extract(
+        html_text,
+        url=url,
+        output_format="html",
+        include_comments=False,
+        include_tables=True,
+        favor_recall=False,
+    )
+
+
+def html_to_markdown(html_text: str) -> str:
+    try:
+        from html_to_markdown import convert
+        result = convert(html_text)
+        return getattr(result, "content", result if isinstance(result, str) else "")
+    except ImportError:
+        pass
+    try:
+        from markdownify import markdownify
+    except ImportError as exc:
+        raise RuntimeError("Install html-to-markdown or markdownify for HTML to Markdown conversion.") from exc
+    return markdownify(
+        html_text,
+        heading_style="ATX",
+        bullets="-",
+        strip=["script", "style", "nav", "footer", "aside", "iframe", "form"],
+    )
+
+
+def url_to_stem(url: str) -> str:
+    parsed = urllib.parse.urlparse(url)
+    name = Path(parsed.path.rstrip("/") or parsed.netloc).stem or "fetched"
+    return re.sub(r"[^A-Za-z0-9._-]+", "-", name).strip("-") or "fetched"
 
 
 def iter_markdown_files(paths: list[Path], recursive: bool) -> list[Path]:
@@ -282,35 +392,78 @@ def iter_markdown_files(paths: list[Path], recursive: bool) -> list[Path]:
     return sorted(dict.fromkeys(files), key=lambda p: str(p).lower())
 
 
+def iter_files(paths: list[Path], recursive: bool, suffixes: set[str] | None = None) -> list[Path]:
+    files: list[Path] = []
+    for path in paths:
+        expanded = path.expanduser().resolve()
+        if expanded.is_dir() and recursive:
+            candidates = [p for p in expanded.rglob("*") if p.is_file()]
+        elif expanded.is_file():
+            candidates = [expanded]
+        else:
+            candidates = []
+        for candidate in candidates:
+            if suffixes is None or candidate.suffix.lower() in suffixes:
+                files.append(candidate)
+    return sorted(dict.fromkeys(files), key=lambda p: str(p).lower())
+
+
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Convert Markdown files to Word or self-contained HTML.")
-    parser.add_argument("format", choices=["word", "html", "both"], help="Output format.")
-    parser.add_argument("paths", nargs="*", type=Path, help="Markdown files, or directories when --recursive is used.")
+    parser = argparse.ArgumentParser(description="Convert Markdown, HTML, and common document files.")
+    parser.add_argument("format", choices=["word", "html", "both", "to-md", "html-to-md", "url-to-md"], help="Output format.")
+    parser.add_argument("paths", nargs="*", help="Files, URLs, or directories when --recursive is used.")
     parser.add_argument("-o", "--output-dir", type=Path, default=None, help="Optional output directory.")
     parser.add_argument("--recursive", action="store_true", help="Scan directories recursively for Markdown files.")
     parser.add_argument("--pandoc", default=None, help="Path to pandoc. Overrides auto detection.")
+    parser.add_argument("--theme", choices=sorted(HTML_THEMES), default="classic", help="HTML theme. classic preserves the original right-click output.")
+    parser.add_argument("--url-mode", choices=["auto", "article", "structured"], default="article", help="URL to Markdown mode.")
     parser.add_argument("--check", action="store_true", help="Check dependencies and selected files without converting.")
     args = parser.parse_args()
 
     try:
         log(f"invoke: argv={sys.argv} cwd={Path.cwd()}")
+        path_args = [Path(path) for path in args.paths]
         if args.check:
-            return check_environment(args.paths, args.recursive, args.pandoc)
+            return check_environment(path_args, args.recursive, args.pandoc)
         if not args.paths:
-            print("No Markdown files supplied.", file=sys.stderr)
-            return 2
-        pandoc = args.pandoc or find_pandoc()
-        files = iter_markdown_files(args.paths, args.recursive)
-        if not files:
-            print("No Markdown files found.", file=sys.stderr)
+            print("No input supplied.", file=sys.stderr)
             return 2
 
         outputs: list[Path] = []
-        for src in files:
-            if args.format in {"word", "both"}:
-                outputs.append(convert_word(src, args.output_dir.expanduser().resolve() if args.output_dir else None, pandoc))
-            if args.format in {"html", "both"}:
-                outputs.append(convert_html(src, args.output_dir.expanduser().resolve() if args.output_dir else None, pandoc))
+        output_dir = args.output_dir.expanduser().resolve() if args.output_dir else None
+        if args.format == "url-to-md":
+            for item in args.paths:
+                outputs.append(convert_url_to_md(item, output_dir, args.url_mode))
+        elif args.format == "to-md":
+            files = iter_files(path_args, args.recursive, None)
+            if not files:
+                print("No files found.", file=sys.stderr)
+                return 2
+            for src in files:
+                if src.suffix.lower() in MARKDOWN_SUFFIXES:
+                    continue
+                if src.suffix.lower() in HTML_SUFFIXES:
+                    outputs.append(convert_html_to_md(src, output_dir))
+                else:
+                    outputs.append(convert_any_to_md(src, output_dir))
+        elif args.format == "html-to-md":
+            files = iter_files(path_args, args.recursive, HTML_SUFFIXES)
+            if not files:
+                print("No HTML files found.", file=sys.stderr)
+                return 2
+            for src in files:
+                outputs.append(convert_html_to_md(src, output_dir))
+        else:
+            pandoc = args.pandoc or find_pandoc()
+            files = iter_markdown_files(path_args, args.recursive)
+            if not files:
+                print("No Markdown files found.", file=sys.stderr)
+                return 2
+            for src in files:
+                if args.format in {"word", "both"}:
+                    outputs.append(convert_word(src, output_dir, pandoc))
+                if args.format in {"html", "both"}:
+                    outputs.append(convert_html(src, output_dir, pandoc, args.theme))
 
         for path in outputs:
             print(path)

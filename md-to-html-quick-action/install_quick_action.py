@@ -134,7 +134,14 @@ def main() -> int:
     contents_dir.mkdir(parents=True, exist_ok=True)
     resources_dir.mkdir(parents=True, exist_ok=True)
 
-    command = f'exec "{sys.executable}" "{cli_path}" html "$@"'
+    runner = tool_dir.parent / ".venv" / "bin" / "python"
+    command = (
+        'export PATH="/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"\n'
+        f'RUNNER="{runner}"\n'
+        'if [[ ! -x "$RUNNER" ]]; then RUNNER="$(command -v python3 || true)"; fi\n'
+        'if [[ -z "$RUNNER" ]]; then exit 1; fi\n'
+        f'exec "$RUNNER" "{cli_path}" html "$@"'
+    )
 
     with (contents_dir / "info.plist").open("wb") as f:
         plistlib.dump(build_info_plist(), f, fmt=plistlib.FMT_XML)

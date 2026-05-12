@@ -1,0 +1,4 @@
+html-to-markdown
+markdownify
+markitdown[all]
+trafilatura
