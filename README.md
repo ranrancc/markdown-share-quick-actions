@@ -394,3 +394,61 @@ py -3 md_share.py html --theme classic path\to\simple.md
 - Do not modify source Markdown files in place.
 - Do not overwrite `md-to-word-quick-action/reference.docx` unless the user asks to change Word styling.
 - Do not commit private Obsidian research notes, local `.workflow` bundles, `.venv`, `__pycache__`, or generated output files.
+
+---
+
+## Windows 常见问题
+
+> 以下问题基于 Windows 10/11 实际测试反馈整理。
+
+### 1. "Markdown to HTML - Choose Theme" 报错 `unrecognized arguments`
+
+**原因**：主题选择器的批处理文件把 `--theme` 参数写在了文件路径 `%%*` 之后，导致 Python argparse 解析失败。
+
+**修复**（v1.x → v1.x+1）：install_windows.py 生成的主题选择器 `.bat` 已修正参数顺序为 `html %%* --theme "%%THEME%%"`。
+
+### 2. "Document to Markdown" 提示 `markitdown is not installed`
+
+**原因**：Windows 版默认使用系统 Python（`py -3`），而 `markitdown` 及其可选依赖（处理 docx/xlsx/pptx/pdf）需要单独安装。
+
+**解决**：
+```bat
+py -3 -m pip install "markitdown[all]"
+```
+
+### 3. Word 转 Markdown 后格式丢失（只剩纯文本）
+
+**原因**：markitdown 的设计目标就是提取纯文本，方便塞给 AI。它不会保留标题层级、表格结构、图片位置。
+
+**修复**（v1.x+1）：`md_share.py` 的 `to-md` 命令现在会**优先尝试 pandoc**（保留格式），pandoc 失败时才 fallback 到 markitdown（纯文本）。
+
+支持的 pandoc 格式：`.docx` `.xlsx` `.pptx` `.pdf` `.html` `.odt` `.rtf` `.epub`
+
+### 4. Pandoc 找不到（`where pandoc` 失败）
+
+**原因**：Windows 版 Pandoc 安装器默认放到 `%LOCALAPPDATA%\Pandoc\`，不一定在系统 PATH 里。
+
+**修复**（v1.x+1）：`md_share.py` 的 `find_pandoc()` 已包含常见 Windows 安装路径检测：
+- `C:\Program Files\Pandoc\pandoc.exe`
+- `C:\Users\%USERNAME%\AppData\Local\Pandoc\pandoc.exe`
+
+### 5. Word 模板 `reference.docx` 没生效
+
+**原因**：安装器会把运行时文件复制到稳定目录 `%LOCALAPPDATA%\MarkdownShareQuickActions\`，自定义模板需要放到那里，而不是克隆的仓库目录。
+
+**正确路径**：
+```
+%LOCALAPPDATA%\MarkdownShareQuickActions\md-to-word-quick-action\reference.docx
+```
+
+替换这个文件后，右键 "Markdown to Word" 就会使用你的样式。
+
+---
+
+## 更新日志
+
+### v1.x+1（Windows 修复版）
+- **修复** `install_windows.py` 主题选择器参数顺序错误
+- **修复** `md_share.py` `to-md` 命令优先使用 pandoc 保留格式，fallback 到 markitdown
+- **改进** Windows Pandoc 路径自动检测（支持用户级安装目录）
+- **文档** 新增 Windows 常见问题排查指南

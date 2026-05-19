@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 
 from __future__ import annotations
 
@@ -39,6 +39,7 @@ def command_prefix() -> str:
 def build_wrapper(root_path: Path, command: str | None) -> str:
     root = quote_batch_value(root_path)
     if command is None:
+        # FIX: %* (file path) must come BEFORE --theme so argparse parses correctly
         body = r"""
 echo Choose an HTML theme:
 echo   1. Classic
@@ -52,7 +53,7 @@ if errorlevel 4 if not defined THEME set "THEME=reading"
 if errorlevel 3 if not defined THEME set "THEME=report"
 if errorlevel 2 if not defined THEME set "THEME=article"
 if errorlevel 1 if not defined THEME set "THEME=classic"
-%PY% "%ROOT%\md_share.py" html --theme "%THEME%" %*
+%PY% "%ROOT%\md_share.py" html %* --theme "%THEME%"
 """.strip()
     else:
         body = command

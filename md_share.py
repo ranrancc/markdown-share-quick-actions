@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 
 from __future__ import annotations
 
@@ -288,19 +288,38 @@ def convert_html(src: Path, output_dir: Path | None, pandoc: str, theme: str = "
 
 
 def convert_any_to_md(src: Path, output_dir: Path | None) -> Path:
+    dest = output_path(src, "md", output_dir)
+    log(f"to-md start: src={src} dest={dest}")
+
+    # FIX: Try pandoc first for format-preserving conversion (headings, tables, images)
+    ext = src.suffix.lower()
+    pandoc_supported = {".docx", ".xlsx", ".pptx", ".pdf", ".html", ".htm", ".odt", ".rtf", ".epub"}
+    if ext in pandoc_supported:
+        try:
+            pandoc = find_pandoc()
+            subprocess.run(
+                [pandoc, str(src), "-t", "markdown", "-o", str(dest), "--wrap=none"],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            log(f"to-md done via pandoc: {dest}")
+            return dest
+        except Exception as exc:
+            log(f"pandoc failed for {src}: {exc}, falling back to markitdown")
+
+    # Fallback to markitdown (text-only extraction)
     try:
         from markitdown import MarkItDown
     except ImportError as exc:
         raise RuntimeError("markitdown is not installed. Install with: python3 -m pip install 'markitdown[all]'") from exc
-    dest = output_path(src, "md", output_dir)
-    log(f"to-md start: src={src} dest={dest}")
     converter = MarkItDown()
     result = converter.convert(str(src))
     content = result.text_content or ""
     if not content.strip():
         raise RuntimeError(f"Conversion produced empty Markdown: {src}")
     dest.write_text(content, encoding="utf-8")
-    log(f"to-md done: dest={dest} exists={dest.exists()} size={dest.stat().st_size if dest.exists() else 0}")
+    log(f"to-md done via markitdown: {dest} exists={dest.exists()} size={dest.stat().st_size if dest.exists() else 0}")
     return dest
 
 
