@@ -199,6 +199,8 @@ def postprocess_docx(dest: Path) -> None:
 
 def preprocess_markdown(src: Path, dst: Path) -> None:
     text = src.read_text(encoding="utf-8")
+    frontmatter = re.compile(r"\A---[ \t]*\r?\n.*?\r?\n---[ \t]*(?:\r?\n|$)", re.DOTALL)
+    text = frontmatter.sub("", text, count=1)
     pattern = re.compile(r"!\[\[([^\]]+)\]\]")
 
     def replace(match: re.Match[str]) -> str:

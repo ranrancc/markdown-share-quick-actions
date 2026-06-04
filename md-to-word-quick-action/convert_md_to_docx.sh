@@ -52,6 +52,9 @@ src = Path(sys.argv[1])
 dst = Path(sys.argv[2])
 text = src.read_text(encoding="utf-8")
 
+frontmatter = re.compile(r'\A---[ \t]*\r?\n.*?\r?\n---[ \t]*(?:\r?\n|$)', re.DOTALL)
+text = frontmatter.sub("", text, count=1)
+
 pattern = re.compile(r'!\[\[([^\]]+)\]\]')
 
 def replace(match):
